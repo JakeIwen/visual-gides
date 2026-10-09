@@ -1,723 +1,479 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>A/C infrared controller · Visual Guides</title>
-    <link rel="stylesheet" href="/style.css" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <script src="/guide.js" defer></script>
-  </head>
-  <body>
-    <header class="topbar">
-      <a class="brand" href="/">Visual Guides &amp; Documentation</a>
-    </header>
-    <div class="guide-layout">
-      <nav class="toc" aria-label="Guide sections">
-        <a href="#overview">Overview</a><a href="#parts">Parts</a
-        ><a href="#wiring">Wiring</a><a href="#setup">Pi setup</a
-        ><a href="#try">Command console</a
-        ><a href="#protocol">IR protocol and API</a
-        ><a href="#troubleshooting">Troubleshooting</a
-        ><a href="#sources">Sources and compatibility</a>
-      </nav>
-      <main class="guide-main">
-        <header class="guide-header" id="overview">
-          <h1>A/C infrared controller</h1>
-          <div class="facts">
-            <div>
-              <small>Target appliance</small><strong>FFRE08L3S15</strong>
-            </div>
-            <div>
-              <small>Donor remote</small
-              ><strong>Yamaha RAV531 · ZP35470</strong>
-            </div>
-            <div>
-              <small>Signal</small
-              ><strong>38 kHz · Extended NEC candidate</strong>
-            </div>
-          </div>
-          <aside class="notice">
-            <p>
-              <strong>Hardware testing pending.</strong> The API starts in
-              preview mode. The command table matches a captured Frigidaire
-              RG15D remote, with timings from a related Kenmore A/C. Reception
-              has not been confirmed on your exact unit. A successful send
-              reports transmission, never the A/C’s actual state.
-            </p>
-          </aside>
-          <div class="page-links">
-            <a href="#try">Command console</a><a href="/">Guide index</a>
-          </div>
-        </header>
-        <section id="parts" class="section">
-          <div class="section-title">
-            <h2>Parts</h2>
-          </div>
-          <p>
-            Your electronics catalog was checked on October 8, 2026. These
-            records describe inventory evidence, not a fresh physical count.
-            Storage locations are unrecorded.
-          </p>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Part</th>
-                  <th>Inventory match</th>
-                  <th>Use / check</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>IR LED</strong></td>
-                  <td>
-                    Yamaha RAV531 donor<small
-                      >Supplied photo; part number ZP35470</small
-                    >
-                  </td>
-                  <td>
-                    Remove batteries before opening. Salvage the front emitter.
-                    Its electrical rating and wavelength are unknown.
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>2N7000 MOSFET</strong></td>
-                  <td>
-                    Kemerta 50-piece assortment<small
-                      ><code
-                        >semiconductor-kemerta-mosfet-assortment-50pc-001</code
-                      ></small
-                    >
-                  </td>
-                  <td>
-                    25 advertised 2N7000s; assortment reported owned. Verify
-                    actual marking and datasheet pinout. Bench-test at 3.3 V
-                    gate drive.
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>Jumper wires</strong></td>
-                  <td>
-                    120 × Dupont 24 AWG, 30 cm<small
-                      ><code
-                        >wire-dupont-jumper-24awg-30cm-assortment-001</code
-                      ></small
-                    >
-                  </td>
-                  <td>Package observed; select the required connector ends.</td>
-                </tr>
-                <tr>
-                  <td><strong>Protoboard</strong></td>
-                  <td>
-                    6 × ElectroCookie mini boards<small
-                      ><code
-                        >protoboard-electrocookie-mini-gold-6pack-001</code
-                      ></small
-                    >
-                  </td>
-                  <td>
-                    Reported owned. These are solderable boards, not solderless
-                    breadboards.
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>Optional GPIO breakout</strong></td>
-                  <td>
-                    REXQualis GPIO LED & Breakout V1.0<small
-                      ><code
-                        >breakout-rexqualis-rpi-gpio-led-v1-001</code
-                      ></small
-                    >
-                  </td>
-                  <td>
-                    One observed. Verify header orientation and terminal
-                    continuity; onboard LEDs add load.
-                  </td>
-                </tr>
-                <tr>
-                  <td><strong>Alternate switch module</strong></td>
-                  <td>
-                    4 × D4184 dual N-MOS PWM<small
-                      ><code>switch-d4184-dual-nmos-pwm-001</code></small
-                    >
-                  </td>
-                  <td>
-                    Observed, untested. Not the default circuit: input circuitry
-                    and exact transistor suffix need inspection.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="two-col">
-            <div class="panel">
-              <h3>Additional supplies</h3>
-              <p>
-                <strong>680 Ω, 100 Ω and 100 kΩ resistors</strong>, ¼ W is
-                sufficient. Optional 330 Ω for later measured testing. A
-                multimeter, soldering tools and heat-shrink or other insulation
-                are needed to identify and assemble the parts.
-              </p>
-              <p class="small">
-                None of these resistors or test tools are confirmed in the
-                catalog. “Not cataloged” does not mean you do not own them.
-              </p>
-            </div>
-            <div class="panel">
-              <h3>Optional equipment</h3>
-              <p>
-                A solderless breadboard; a
-                <strong>38 kHz demodulating receiver</strong> such as TSOP38438
-                for waveform checks; or a known, documented IR LED if the donor
-                cannot be identified or tested.
-              </p>
-              <p class="small">
-                The 2N7000’s on-resistance is not guaranteed at 3.3 V. If it
-                switches poorly, choose a MOSFET explicitly specified at 2.5–3.3
-                V, or a verified NPN driver design.
-              </p>
-            </div>
-          </div>
-        </section>
-        <section id="wiring" class="section">
-          <div class="section-title">
-            <h2>Wiring</h2>
-          </div>
-          <p>
-            Use a transistor as a low-side switch. The Pi pin controls the gate;
-            the LED current comes from the 5 V rail through a resistor. Keep the
-            Pi powered off while wiring. Leave the A/C enclosure closed.
-          </p>
-          <div class="circuit">
-            <img
-              src="/wiring.svg"
-              alt="GPIO18 through 100 ohms to MOSFET gate, 100 kiloohm gate pull-down, 5 volt LED supply through 680 ohms, and shared ground. Complete connections follow in the table."
-              width="900"
-              height="435"
-            />
-          </div>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>From</th>
-                  <th>To</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Pi 5 V · physical pin 2</td>
-                  <td>680 Ω → IR LED anode (+)</td>
-                </tr>
-                <tr>
-                  <td>IR LED cathode (−)</td>
-                  <td>MOSFET drain (D)</td>
-                </tr>
-                <tr>
-                  <td>BCM GPIO18 · physical pin 12</td>
-                  <td>100 Ω → MOSFET gate (G)</td>
-                </tr>
-                <tr>
-                  <td>MOSFET gate (G)</td>
-                  <td>100 kΩ → ground (pull-down)</td>
-                </tr>
-                <tr>
-                  <td>MOSFET source (S)</td>
-                  <td>Pi GND · physical pin 6; same ground as pull-down</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <h3>Component identification and current limits</h3>
-          <p>
-            Use a multimeter diode test to identify the emitter’s polarity and
-            forward voltage. Salvaged legs may have been cut, so lead length is
-            unreliable. Verify the MOSFET’s <em>actual</em> manufacturer and
-            pinout. Wire labels in the diagram do not specify left-to-right
-            TO-92 legs.
-          </p>
-          <p>
-            At 5 V, a provisional LED drop of 1.2–1.5 V gives about
-            <strong>5–6 mA through 680 Ω</strong>, before transistor losses.
-            This is a conservative starting point, not a proven rating for the
-            Yamaha LED. Measure voltage across the resistor: current is
-            <code>I = Vresistor / 680 Ω</code>. A meter averages bursts; it
-            cannot measure peak pulse current from this reading.
-          </p>
-          <p class="small">
-            Calculation: I = (Vsupply − VLED − Vswitch) / R. A 330 Ω resistor
-            would give roughly 10–12 mA under the same assumptions. Do not
-            increase current based only on a weak camera image. No 100 mA pulse
-            drive is justified without the emitter’s own datasheet.
-          </p>
-          <aside class="notice">
-            <p>
-              <strong>Pin check:</strong> GPIO18 was free at inspection. GPIO17
-              is owned by the alert light, GPIO14 by the fan, and GPIO23/24 by
-              software I²C. Recheck before installing the IR overlay. Pin
-              numbers here refer to the 40-pin header.
-            </p>
-          </aside>
-        </section>
-        <section id="setup" class="section">
-          <div class="section-title">
-            <h2>Pi setup</h2>
-          </div>
-          <p>
-            The guide server and API can run before the circuit exists. Hardware
-            setup is a separate, deliberate step. These commands run in your
-            Terminal; the guide never edits boot configuration from the browser.
-          </p>
-          <ol class="steps">
-            <li>
-              <h3>Inspect the project</h3>
-              <pre><code>ssh pi@vanpi.lan
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Window A/C IR remote · Visual Guides</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/site.css">
+  <script src="/assets/ac-guide.js" defer></script>
+</head>
+<body>
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="/">Visual Guides &amp; Documentation</a><span aria-hidden="true">/</span><span aria-current="page">Window A/C IR remote</span>
+  </nav>
+
+  <div class="page">
+    <nav class="toc" aria-label="Sections">
+      <a href="#parts">Parts</a>
+      <a href="#wiring">Wiring</a>
+      <a href="#setup">Pi setup <span class="count" data-progress="steps"></span></a>
+      <a href="#console">Command console</a>
+      <a href="#protocol">Protocol</a>
+      <a href="#api">API</a>
+      <a href="#troubleshooting">Troubleshooting <span class="count" data-progress="bench"></span></a>
+      <a href="#sources">Sources &amp; confidence</a>
+    </nav>
+
+    <main>
+      <h1>Window A/C IR remote</h1>
+
+      <dl class="facts">
+        <dt>Appliance</dt>
+        <dd>Frigidaire FFRE08L3S15 window A/C</dd>
+        <dt>Lost remote</dt>
+        <dd>Replacement part 5304487535, RG15D/E-ELL family</dd>
+        <dt>Signal</dt>
+        <dd>38 kHz carrier · extended NEC · address <code>08&nbsp;F5</code> · 11 commands</dd>
+        <dt>Emitter</dt>
+        <dd>IR LED salvaged from a Yamaha RAV531 remote (ZP35470)</dd>
+        <dt>Driver</dt>
+        <dd>2N7000 MOSFET switching the LED, gate on BCM GPIO18 (physical pin 12)</dd>
+        <dt>Software</dt>
+        <dd><code>app.py</code> API, <code>visual-guides.service</code> on port 8791. Transmit stays off until step 5.</dd>
+        <dt>Status</dt>
+        <dd><span class="tag warn">Untested on this A/C</span> Command bytes match a captured RG15D remote. Timings come from a related Kenmore model.</dd>
+        <dt>Updated</dt>
+        <dd>2026-10-08</dd>
+      </dl>
+
+      <!-- ============================== PARTS ============================== -->
+      <h2 id="parts">Parts</h2>
+      <p>Matched against the electronics inventory on 2026-10-08. A match is a catalog record, not a fresh physical count, and storage locations aren't recorded.</p>
+
+      <h3>From the inventory</h3>
+      <div class="table-wrap">
+        <table class="stack">
+          <thead><tr><th>Part</th><th>Inventory record</th><th>Check before use</th></tr></thead>
+          <tbody>
+            <tr>
+              <td class="lead-cell">IR LED</td>
+              <td data-label="Source">Yamaha RAV531 remote, part ZP35470 (from your photo)</td>
+              <td data-label="Check">Take the batteries out before opening it, then salvage the front emitter. Rating and wavelength are unknown.</td>
+            </tr>
+            <tr>
+              <td class="lead-cell">2N7000 MOSFET</td>
+              <td data-label="Inventory record">Kemerta 50-piece MOSFET assortment, 25 advertised 2N7000. Reported owned.<small class="id">semiconductor-kemerta-mosfet-assortment-50pc-001</small></td>
+              <td data-label="Check">Read the actual marking and use that datasheet's pinout. Bench-test it at 3.3 V gate drive.</td>
+            </tr>
+            <tr>
+              <td class="lead-cell">Jumper wires</td>
+              <td data-label="Inventory record">120 Dupont jumpers, 24 AWG, 30 cm. Package observed.<small class="id">wire-dupont-jumper-24awg-30cm-assortment-001</small></td>
+              <td data-label="Check">Pick the connector ends you need.</td>
+            </tr>
+            <tr>
+              <td class="lead-cell">Protoboard</td>
+              <td data-label="Inventory record">ElectroCookie mini boards, 6-pack. Reported owned.<small class="id">protoboard-electrocookie-mini-gold-6pack-001</small></td>
+              <td data-label="Check">Solder boards, not solderless breadboards.</td>
+            </tr>
+            <tr>
+              <td class="lead-cell">GPIO breakout <span class="tag">optional</span></td>
+              <td data-label="Inventory record">REXQualis GPIO LED &amp; Breakout V1.0. One observed.<small class="id">breakout-rexqualis-rpi-gpio-led-v1-001</small></td>
+              <td data-label="Check">Check header orientation and terminal continuity. Its onboard LEDs add load.</td>
+            </tr>
+            <tr>
+              <td class="lead-cell">D4184 switch module <span class="tag">alternate</span></td>
+              <td data-label="Inventory record">4 dual N-MOS PWM modules. Observed, untested.<small class="id">switch-d4184-dual-nmos-pwm-001</small></td>
+              <td data-label="Check">Not the default circuit. Its input circuitry and exact transistor suffix need inspecting first.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Get or confirm you have</h3>
+      <ul class="plain-list">
+        <li>Resistors, ¼ W: <strong>680 Ω</strong> (LED), <strong>100 Ω</strong> (gate), <strong>100 kΩ</strong> (gate pull-down). Optionally 330 Ω for a later, measured current step.</li>
+        <li>Multimeter with diode test, to find the LED's polarity and forward drop.</li>
+        <li>Soldering iron and solder, plus heat-shrink or other insulation.</li>
+      </ul>
+      <p class="small">None of these are in the catalog. That doesn't mean you don't own them.</p>
+
+      <h3>Optional</h3>
+      <ul class="plain-list">
+        <li>A solderless breadboard for a first trial.</li>
+        <li>A 38 kHz demodulating IR receiver such as TSOP38438, to check the transmitted waveform.</li>
+        <li>A documented IR LED, if the donor can't be identified or tested.</li>
+        <li>A MOSFET rated for 2.5–3.3 V gate drive, or a verified NPN driver, if the 2N7000 switches poorly. Its on-resistance isn't guaranteed at 3.3 V.</li>
+      </ul>
+
+      <!-- ============================== WIRING ============================== -->
+      <h2 id="wiring">Wiring</h2>
+      <p>The MOSFET switches the LED's low side. GPIO18 only drives the gate; LED current comes from the 5 V pin through the 680 Ω resistor. Keep the Pi powered off while wiring, and leave the A/C's enclosure closed.</p>
+
+      <figure>
+        <div class="schematic">
+          <svg viewBox="0 0 760 400" role="img" aria-labelledby="sch-title sch-desc">
+            <title id="sch-title">IR LED driver schematic</title>
+            <desc id="sch-desc">Pi 5 V pin 2 through 680 ohms to the LED anode. LED cathode to the 2N7000 drain. GPIO18 pin 12 through 100 ohms to the gate, with 100 kilohms from gate to ground. Source to Pi ground pin 6.</desc>
+            <rect class="sv-board" x="16" y="20" width="180" height="360" rx="8"/>
+            <text class="sv-text sv-strong" x="34" y="52">Raspberry Pi 4</text>
+            <text class="sv-text sv-pinlabel" x="182" y="95" text-anchor="end">5 V · pin 2</text>
+            <text class="sv-text sv-pinlabel" x="182" y="225" text-anchor="end">GPIO18 · pin 12</text>
+            <text class="sv-text sv-pinlabel" x="182" y="355" text-anchor="end">GND · pin 6</text>
+            <rect class="f-5v" x="190" y="84" width="12" height="12" rx="2"/>
+            <rect class="f-gpio" x="190" y="214" width="12" height="12" rx="2"/>
+            <rect class="f-gnd" x="190" y="344" width="12" height="12" rx="2"/>
+
+            <path class="sv-wire w-5v" d="M202 90 H520 V112 M520 168 V194"/>
+            <rect class="sv-part w-5v" x="510" y="112" width="20" height="56" rx="2"/>
+            <text class="sv-text sv-strong" x="544" y="137">680 Ω</text>
+            <text class="sv-text sv-muted" x="544" y="155">LED current</text>
+
+            <polygon class="sv-part w-led" points="503,194 537,194 520,222"/>
+            <path class="sv-wire w-led" d="M503 222 H537"/>
+            <path class="sv-wire w-led" style="stroke-width:2" d="M541 202 L559 189 M552 189 H559 V196 M541 214 L559 201 M552 201 H559 V208"/>
+            <text class="sv-text sv-strong" x="570" y="203">Donor IR LED</text>
+            <text class="sv-text sv-muted" x="570" y="220">anode (+) at top</text>
+
+            <path class="sv-wire w-sw" d="M520 222 V270 H504"/>
+            <path class="sv-wire w-fet" d="M504 260 V280 M504 284 V296 M504 300 V320 M494 262 V318"/>
+            <path class="sv-wire w-gnd" d="M504 310 H520 V350 M520 290 V310"/>
+            <path class="sv-wire w-gnd" style="stroke-width:2" d="M520 290 H512"/>
+            <polygon class="f-gnd" points="506,290 515,285 515,295"/>
+            <text class="sv-text sv-muted" x="528" y="266">D</text>
+            <text class="sv-text sv-muted" x="478" y="282">G</text>
+            <text class="sv-text sv-muted" x="528" y="330">S</text>
+            <text class="sv-text sv-strong" x="548" y="292">2N7000</text>
+            <text class="sv-text sv-muted" x="548" y="310">N-MOSFET, low side</text>
+            <text class="sv-text sv-muted" x="548" y="346">D, G, S are electrical pins.</text>
+            <text class="sv-text sv-muted" x="548" y="362">Leg order: see the datasheet.</text>
+
+            <path class="sv-wire w-gpio" d="M202 220 H262 M320 220 H420 V302 M420 290 H494"/>
+            <rect class="sv-part w-gpio" x="262" y="210" width="58" height="20" rx="2"/>
+            <text class="sv-text sv-strong" x="291" y="200" text-anchor="middle">100 Ω</text>
+            <text class="sv-text sv-muted" x="291" y="248" text-anchor="middle">gate</text>
+            <circle class="f-gpio" cx="420" cy="290" r="4.5"/>
+            <rect class="sv-part w-gnd" x="410" y="302" width="20" height="34" rx="2"/>
+            <text class="sv-text sv-strong" x="400" y="316" text-anchor="end">100 kΩ</text>
+            <text class="sv-text sv-muted" x="400" y="333" text-anchor="end">pull-down</text>
+
+            <path class="sv-wire w-gnd" d="M202 350 H520 M420 336 V350"/>
+            <circle class="f-gnd" cx="420" cy="350" r="4.5"/>
+          </svg>
+        </div>
+        <span class="schematic-hint">Swipe the diagram sideways for the LED and MOSFET. The connection list below has every wire.</span>
+        <figcaption>One shared ground. GPIO18 is active high. Never connect 5 V to GPIO18.</figcaption>
+      </figure>
+
+      <h3>Connections</h3>
+      <div class="table-wrap">
+        <table class="stack flow">
+          <thead><tr><th>From</th><th>Through</th><th>To</th></tr></thead>
+          <tbody>
+            <tr><td class="lead-cell"><span class="chip c-5v"></span>Pi 5 V, pin 2</td><td data-label="Through">680 Ω</td><td data-label="To">LED anode (+)</td></tr>
+            <tr><td class="lead-cell"><span class="chip"></span>LED cathode (−)</td><td data-label="Through">wire</td><td data-label="To">MOSFET drain (D)</td></tr>
+            <tr><td class="lead-cell"><span class="chip c-gpio"></span>Pi GPIO18, pin 12</td><td data-label="Through">100 Ω</td><td data-label="To">MOSFET gate (G)</td></tr>
+            <tr><td class="lead-cell"><span class="chip c-mix"></span>MOSFET gate (G)</td><td data-label="Through">100 kΩ</td><td data-label="To">Ground (pull-down)</td></tr>
+            <tr><td class="lead-cell"><span class="chip c-gnd"></span>MOSFET source (S)</td><td data-label="Through">wire</td><td data-label="To">Pi GND, pin 6, shared with the pull-down</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Header pins</h3>
+      <div class="header-map" role="img" aria-label="Header pins 1 to 12. Pin 2 is 5 V, pin 6 is ground, pin 12 is GPIO18; all three are in the even-numbered row.">
+        <span class="row-label">even</span>
+        <span class="pin used p-5v">2</span><span class="pin">4</span><span class="pin used p-gnd">6</span><span class="pin">8</span><span class="pin">10</span><span class="pin used p-gpio">12</span>
+        <span class="row-label">odd</span>
+        <span class="pin">1</span><span class="pin">3</span><span class="pin">5</span><span class="pin">7</span><span class="pin">9</span><span class="pin">11</span>
+      </div>
+      <ul class="pin-legend">
+        <li><span class="chip c-5v"></span>Pin 2: 5 V, LED supply</li>
+        <li><span class="chip c-gnd"></span>Pin 6: ground</li>
+        <li><span class="chip c-gpio"></span>Pin 12: BCM GPIO18, the IR signal</li>
+      </ul>
+      <p class="small">Pins 1–12 of the 40-pin header, drawn with pin 1 at the left. All three wires land in the even-numbered row, on the 1st, 3rd and 6th pins from the pin-1 end. Find pin 1 on the board before connecting anything.</p>
+
+      <h3>Identify the parts before applying power</h3>
+      <ul class="plain-list">
+        <li><strong>LED:</strong> use the meter's diode test to find polarity and forward drop. Salvaged legs may have been trimmed, so lead length tells you nothing.</li>
+        <li><strong>MOSFET:</strong> confirm the actual manufacturer and its pinout. The D/G/S labels in the schematic are electrical pins, not TO-92 leg order.</li>
+      </ul>
+
+      <h3>LED current</h3>
+      <p>I = (V<sub>supply</sub> − V<sub>LED</sub> − V<sub>switch</sub>) / R. With a provisional 1.2–1.5 V LED drop, 680 Ω gives about <strong>5–6 mA</strong> before transistor losses; 330 Ω would give about 10–12 mA. That's a conservative start, not a rating for the Yamaha LED.</p>
+      <form class="calc" id="current-calc" onsubmit="return false">
+        <fieldset>
+          <legend>Estimate</legend>
+          <label>LED drop (V) <input name="vf" type="number" inputmode="decimal" min="0.8" max="3" step="0.05" value="1.35"></label>
+          <label>Resistor <select name="r"><option value="680" selected>680 Ω</option><option value="330">330 Ω</option></select></label>
+          <div class="result-line"><span>From a 5.0 V supply</span><output id="calc-est">–</output></div>
+        </fieldset>
+        <fieldset>
+          <legend>Measured</legend>
+          <label>Volts across resistor <input name="vr" type="number" inputmode="decimal" min="0" max="5" step="0.01" placeholder="e.g. 3.6"></label>
+          <div class="result-line"><span>I = V<sub>R</sub> / R</span><output id="calc-meas">–</output></div>
+          <p class="small" style="margin:.5rem 0 0">A meter averages the bursts, so this isn't peak pulse current.</p>
+        </fieldset>
+      </form>
+      <div class="caution">
+        <ul class="plain-list">
+          <li>Never connect the LED straight to a GPIO pin, and never leave out its series resistor.</li>
+          <li>Don't raise the current because a phone camera shows a weak glow. No 100 mA pulse drive is justified without the emitter's own datasheet.</li>
+        </ul>
+      </div>
+
+      <h3>GPIO availability</h3>
+      <p>GPIO18 was free at the last inspection. Already taken: GPIO17 (alert light), GPIO14 (fan), GPIO23 and GPIO24 (software I²C). <code>hardware_setup.py</code> rechecks GPIO18's owner before changing anything.</p>
+
+      <!-- ============================== SETUP ============================== -->
+      <h2 id="setup">Pi setup</h2>
+      <p>Run these in your own Terminal, over SSH as <code>pi</code>. The helper calls sudo only for its fixed boot, udev and systemd writes, and refuses to run under sudo itself. Nothing here is done from the browser. The guide and API already run without the circuit.</p>
+      <p><span class="small">Tick steps off as you go; ticks stay in this browser only.</span> <button type="button" class="text-button" data-clear="steps">Clear ticks</button></p>
+
+      <ol class="steps" data-checklist="steps">
+        <li class="step" id="step-1">
+          <div class="step-head"><span class="step-num">1</span><h3>Check the Pi (read-only)</h3><label class="done"><input type="checkbox" data-check="1">Done</label></div>
+          <div class="code"><pre data-copy><code>ssh pi@vanpi.lan
 cd /home/pi/visual-guides/current
 python3 hardware_setup.py status
-python3 app.py --preview temp_up</code></pre>
-              <p class="small">
-                Preview returns the waveform without opening a LIRC device. The
-                Pi already had <code>/usr/bin/ir-ctl</code> at inspection.
-              </p>
-            </li>
-            <li>
-              <h3>Assemble, inspect, and configure</h3>
-              <p>
-                Power the Pi down before attaching wires. After the circuit is
-                checked and the Pi is running again, reconnect and use the setup
-                helper:
-              </p>
-              <pre><code>python3 hardware_setup.py configure --confirm-wiring</code></pre>
-              <p>
-                The helper checks GPIO18 ownership, backs up the boot
-                configuration, and installs the <code>gpio-ir-tx</code> overlay
-                line plus a dedicated udev device alias. It does not send IR or
-                reboot. The overlay uses BCM numbering:
-                <code>dtoverlay=gpio-ir-tx,gpio_pin=18</code>.
-              </p>
-            </li>
-            <li>
-              <h3>Reboot when the van’s services can pause</h3>
-              <p>
-                Finish any backup or other active Pi work first. Rebooting
-                interrupts all services, not just this guide.
-              </p>
-              <pre><code>sudo reboot</code></pre>
-              <p>Reconnect after the Pi returns:</p>
-              <pre><code>ssh pi@vanpi.lan
+python3 hardware_setup.py prepare
+python3 app.py --preview temp_up</code></pre></div>
+          <p><code>status</code> and <code>prepare</code> only read; <code>prepare</code> adds <code>ready_to_configure</code>. <code>--preview</code> prints the waveform without opening any IR device. <code>/usr/bin/ir-ctl</code> was already installed at inspection.</p>
+        </li>
+
+        <li class="step" id="step-2">
+          <div class="step-head"><span class="step-num">2</span><h3>Build the circuit with the Pi off</h3><label class="done"><input type="checkbox" data-check="2">Done</label></div>
+          <p>Shut down when the van's Pi services can pause, then remove power:</p>
+          <div class="code"><pre data-copy><code>sudo poweroff</code></pre></div>
+          <p>Identify the LED and MOSFET pins, build the <a href="#wiring">circuit</a>, check it against the connection table, then power the Pi back on.</p>
+        </li>
+
+        <li class="step" id="step-3">
+          <div class="step-head"><span class="step-num">3</span><h3>Install the boot overlay and device rule</h3><label class="done"><input type="checkbox" data-check="3">Done</label></div>
+          <div class="code"><pre data-copy><code>ssh pi@vanpi.lan
 cd /home/pi/visual-guides/current
-python3 hardware_setup.py status</code></pre>
-              <p>
-                Check that <code>/dev/van-ac-ir-tx</code> resolves to a
-                transmitter. Never assume <code>/dev/lirc0</code> stays assigned
-                to the same device when adding a receiver.
-              </p>
-            </li>
-            <li>
-              <h3>Enable transmissions, then aim and test</h3>
-              <pre><code>python3 hardware_setup.py activate --confirm-wiring</code></pre>
-              <p>
-                Activation validates the driver and transmit capability, then
-                restarts only the guide service with hardware enabled. It does
-                not transmit. Start with
-                <strong>one temperature-up command</strong> while the A/C is
-                already on, at a midrange temperature setting. Observe its
-                display and beep. Power is a toggle; repeated tests can undo
-                each other.
-              </p>
-              <p>
-                Use the <strong>first-test handoff</strong> below from your Mac.
-                It sends one temperature-up command through the local API and
-                does not retry. A successful response does not confirm
-                reception.
-              </p>
-            </li>
-            <li>
-              <h3>Return to preview mode any time</h3>
-              <pre><code>python3 hardware_setup.py deactivate</code></pre>
-              <p>
-                This turns off API transmission while keeping the guide
-                available. It leaves the boot overlay installed. Never remove or
-                repurpose the hardware while a transmitter service is active.
-              </p>
-            </li>
-          </ol>
-          <div class="panel">
-            <h3>Short Terminal handoffs</h3>
-            <p>
-              From the Mac, use the prepared first-test script after hardware
-              activation. Its contents are visible in
-              <a href="/first-test.txt">first-test.txt</a>. To place the private
-              browser token on your Mac’s clipboard, use the
-              <a href="/copy-token.txt">copy-token.txt</a> script. Neither
-              script embeds a token.
-            </p>
-            <p class="small">
-              On this Mac, run <code>zsh /tmp/clip/ac-ir-test-2251</code> for
-              the first send, or <code>zsh /tmp/clip/ac-ir-token-2251</code> to
-              copy the token. These temporary files may disappear after a
-              restart. The linked scripts are their exact contents; save them if
-              needed. CLI sends share the API’s admission lock, so they cannot
-              overlap browser transmissions.
-            </p>
-          </div>
-        </section>
-        <section id="try" class="section">
-          <div class="section-title">
-            <h2>Command console</h2>
-          </div>
-          <div class="console">
-            <div class="status-line">
-              <div>
-                <strong>Infrared command console</strong>
-                <div class="small">
-                  Each request sends one frame. Failed sends are not retried.
-                </div>
-              </div>
-              <span class="pill" id="mode-status">Checking API…</span>
-            </div>
-            <p class="small" id="server-status" role="status">
-              Loading the local controller.
-            </p>
-            <div
-              id="controls"
-              class="control-grid"
-              aria-label="A/C commands"
-            ></div>
-            <details>
-              <summary>Enable real sends in this browser</summary>
-              <div class="notice">
-                <p>
-                  The circuit must be assembled and the Pi hardware mode
-                  activated first. Commands may operate the appliance. Keep its
-                  display visible while validating.
-                </p>
-              </div>
-              <label for="token">Private API token</label
-              ><input
-                id="token"
-                type="password"
-                autocomplete="off"
-                spellcheck="false"
-                placeholder="Paste token from your own SSH session"
-              /><label
-                ><input id="real-send" type="checkbox" disabled />Send IR when I
-                press a command</label
-              >
-              <p class="small">
-                The token stays in this page’s memory and is cleared on reload.
-                Use a trusted local network. For private access on untrusted
-                networks, use the SSH tunnel in the API notes.
-              </p>
-            </details>
-            <p id="result-label" role="status">
-              Choose a button to inspect its waveform. Preview is the default.
-            </p>
-            <pre id="result" tabindex="0">No command requested.</pre>
-          </div>
-        </section>
-        <section id="protocol" class="section">
-          <div class="section-title">
-            <h2>IR protocol and API</h2>
-          </div>
-          <p>
-            The emitter is just a light source; it does not retain Yamaha’s
-            protocol. Linux’s <code>gpio-ir-tx</code> driver generates the
-            carrier and pulse timing through <code>ir-ctl</code>. Python chooses
-            a reviewed waveform instead of bit-banging timing with sleeps.
-          </p>
-          <div class="two-col">
-            <div class="panel">
-              <h3>Frame timing</h3>
-              <p>
-                <strong>38 kHz carrier.</strong> Measured leader: 9,159 µs on /
-                4,455 µs off. A bit is a 639 µs mark, followed by 486 µs for 0
-                or 1,615 µs for 1. Finish with a 637 µs mark. No held-key
-                repeats.
-              </p>
-              <p class="small">
-                These are the measured Kenmore profile’s timings, not exact
-                measurements from your Frigidaire.
-              </p>
-            </div>
-            <div class="panel">
-              <h3>Bit order</h3>
-              <p>
-                Legacy LIRC displays <code>10 AF CC ~CC</code> in MSB order. The
-                equivalent logical NEC bytes are
-                <code>08 F5 reverse8(CC) ~reverse8(CC)</code>, each sent LSB
-                first.
-              </p>
-              <p class="small">
-                For temperature up: LIRC <code>10AF708F</code> → Linux
-                <code>necx:0x08f50e</code>. Sending the printed legacy value
-                directly as a Linux scancode reverses the bits incorrectly.
-              </p>
-            </div>
-          </div>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>API command</th>
-                  <th>Linux NECX equivalent</th>
-                  <th>Meaning / limitation</th>
-                </tr>
-              </thead>
-              <tbody id="protocol-table">
-                <tr>
-                  <td colspan="3">
-                    Loading the server’s canonical command catalog…
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p class="small">
-            The API sends raw measured timings. Linux scancodes above describe
-            the equivalent bits using the standard encoder. All entries remain
-            compatibility candidates until observed working on this A/C. Timer
-            and sleep need extra validation; their state is not tracked.
-          </p>
-          <h3>API contract</h3>
-          <div class="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>Request</th>
-                  <th>Result</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>GET /api/health</code></td>
-                  <td>Service health, no hardware action</td>
-                </tr>
-                <tr>
-                  <td><code>GET /api/ac/status</code></td>
-                  <td>Hardware permission mode; A/C state always unknown</td>
-                </tr>
-                <tr>
-                  <td><code>GET /api/ac/commands</code></td>
-                  <td>Canonical commands, source notes, carrier and pulses</td>
-                </tr>
-                <tr>
-                  <td><code>POST /api/ac/commands/temp_up</code></td>
-                  <td>
-                    <code>{"preview":true}</code> gives a dry run;
-                    <code>{"preview":false}</code> requires hardware mode plus
-                    <code>Authorization: Bearer …</code>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <p>
-            POST bodies must be JSON with exactly one boolean
-            <code>preview</code> field. Commands are serialized, rate-limited,
-            and never automatically retried. <code>202</code> means transmitted
-            but unconfirmed; <code>409</code> means hardware is disabled;
-            <code>401</code> is a missing/invalid token; <code>429</code> means
-            wait before another tap. A transmission error is ambiguous: inspect
-            the A/C before retrying.
-          </p>
-          <p>
-            No absolute temperature, power-on, or power-off endpoint is
-            provided: this command set has relative adjustments and a power
-            toggle, with no feedback. “Cool mode / start” may also start the
-            unit.
-          </p>
-          <h3>Private access over SSH</h3>
-          <pre><code>ssh -N -L 8792:127.0.0.1:8791 pi@vanpi.lan</code></pre>
-          <p>
-            Keep that Terminal open, then visit
-            <a href="http://localhost:8792">localhost:8792</a>. Tokens and
-            commands travel through SSH. The normal LAN endpoint uses HTTP, so
-            avoid sending a bearer token over an untrusted network.
-          </p>
-        </section>
-        <section id="troubleshooting" class="section">
-          <div class="section-title">
-            <h2>Troubleshooting</h2>
-          </div>
-          <div class="two-col">
-            <div class="panel">
-              <h3>No device / permission denied</h3>
-              <p>
-                Run <code>python3 hardware_setup.py status</code>. The overlay
-                needs a reboot after configuration. Check the stable alias,
-                <code>gpio-ir-tx</code> driver, udev rule and transmitter
-                capabilities before changing permissions.
-              </p>
-              <p class="small">Do not make every LIRC device world-writable.</p>
-            </div>
-            <div class="panel">
-              <h3>IR is visible, A/C ignores it</h3>
-              <p>
-                Move close, aim at the front receiver and avoid bright sunlight.
-                Check LED polarity, wiring and MOSFET drive. Try one temperature
-                step while the A/C is on. A camera can reveal some IR emission
-                but cannot verify the carrier or bits.
-              </p>
-            </div>
-            <div class="panel">
-              <h3>Unsure whether a send worked</h3>
-              <p>
-                Look at the physical A/C display. An HTTP success only confirms
-                that the transmit process completed. A timeout may happen after
-                emission started. Do not blindly repeat power or timer commands.
-              </p>
-            </div>
-            <div class="panel">
-              <h3>Every command is ignored</h3>
-              <p>
-                Verify the optical waveform with a 38 kHz receiver. If the
-                candidate profile is incompatible, obtain or borrow the exact
-                replacement remote <strong>5304487535</strong> and capture its
-                commands. Replace the canonical profile only after comparing
-                real captures.
-              </p>
-            </div>
-          </div>
-          <h3>Bench acceptance checklist</h3>
-          <div class="checklist">
-            <label
-              ><input type="checkbox" />Actual MOSFET pins, LED polarity and
-              series resistor verified</label
-            ><label
-              ><input type="checkbox" />GPIO18 still available; grounds common;
-              no 5 V on GPIO</label
-            ><label
-              ><input type="checkbox" />Driver and transmit device recognized;
-              hardware enabled deliberately</label
-            ><label
-              ><input type="checkbox" />One temperature-up and one
-              temperature-down visibly accepted</label
-            ><label
-              ><input type="checkbox" />Other needed commands tested
-              individually; behavior recorded</label
-            >
-          </div>
-          <p class="small">
-            Checks are local to this open page and are not a claim of automatic
-            verification.
-          </p>
-        </section>
-        <section id="sources" class="section">
-          <div class="section-title">
-            <h2>Sources and compatibility</h2>
-          </div>
-          <ol class="sources">
-            <li>
-              <a href="https://partsdr.com/part/5304487535-remote-control"
-                >Frigidaire 5304487535 replacement remote — compatibility
-                list</a
-              ><span
-                >Parts supplier lists FFRE08L3S15. Confirms the replacement
-                part, not the IR waveform.</span
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/Lucaslhm/Flipper-IRDB/blob/d126fb1b6f1e114c52b4a8c19839ea65e3a9c24d/ACs/Frigidaire/Frigidaire_RG15D_AC.ir"
-                >Frigidaire RG15D captured command profile</a
-              ><span
-                >Primary contributed capture in Flipper-IRDB, pinned to d126fb1;
-                CC0-1.0. Its address and all 11 commands agree with this
-                controller.</span
-              >
-            </li>
-            <li>
-              <a
-                href="https://www.replacementremotes.com/electrolux/buy-5304487535-frigidaire-5304487535-air-conditioner-unit-air-conditioner"
-                >5304487535 → RG15D/E-ELL remote-family listing</a
-              ><span
-                >Supplier identification connects the exact replacement part to
-                the captured remote family. Confidence is high, but the physical
-                test is still needed.</span
-              >
-            </li>
-            <li>
-              <a
-                href="https://lirc.sourceforge.net/remotes/Kenmore/Kenmore_253_79081"
-                >Measured Kenmore 253.79081 LIRC capture</a
-              ><span
-                >Primary contributed capture, 2014, using a TSOP6238 on a Pi.
-                Source for the candidate waveform and command mapping; a
-                different appliance model.</span
-              >
-            </li>
-            <li>
-              <a
-                href="https://www.kernel.org/doc/html/latest/userspace-api/media/rc/rc-protos.html"
-                >Linux remote-control protocols and scancodes</a
-              >
-              ·
-              <a
-                href="https://github.com/torvalds/linux/blob/master/drivers/media/rc/ir-nec-decoder.c"
-                >NEC encoder implementation</a
-              ><span
-                >Logical NECX addressing, bit order and carrier behavior.</span
-              >
-            </li>
-            <li>
-              <a href="https://www.lirc.org/html/lircd.conf.html"
-                >LIRC configuration format</a
-              >
-              ·
-              <a
-                href="https://manpages.debian.org/bookworm/ir-keytable/ir-ctl.1.en.html"
-                >Debian ir-ctl manual</a
-              ><span
-                >Legacy code representation and raw pulse/space
-                transmission.</span
-              >
-            </li>
-            <li>
-              <a
-                href="https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README"
-                >Raspberry Pi overlay reference</a
-              >
-              ·
-              <a
-                href="https://www.raspberrypi.com/documentation/computers/raspberry-pi.html"
-                >GPIO electrical guidance</a
-              ><span
-                >gpio-ir-tx parameters and 3.3 V GPIO. The live Pi’s installed
-                overlay reference was also inspected.</span
-              >
-            </li>
-            <li>
-              <a
-                href="https://www.onsemi.com/download/data-sheet/pdf/nds7002a-d.pdf"
-                >onsemi 2N7000 / NDS7002A family datasheet</a
-              >
-              ·
-              <a href="https://www.vishay.com/en/product/82491/"
-                >Vishay TSOP38438 receiver family</a
-              ><span
-                >Identify the actual parts before using package pinouts or
-                ratings. 2N7000 on-resistance is specified at gate voltages
-                above 3.3 V.</span
-              >
-            </li>
-            <li>
-              <strong>Local electronics inventory</strong
-              ><span
-                >Read-only inspection of the 35-record catalog at localhost:8767
-                on October 8, 2026. The relevant item IDs are listed above; no
-                stock counts were changed.</span
-              >
-            </li>
-          </ol>
-          <p class="small">
-            No optical measurement or acceptance test on this exact A/C has been
-            performed. The Yamaha photo identifies the donor remote, not its
-            internal emitter’s specifications.
-          </p>
-        </section>
-      </main>
-    </div>
-  </body>
+python3 hardware_setup.py configure --confirm-wiring</code></pre></div>
+          <p><code>--confirm-wiring</code> is your statement that the circuit is on GPIO18, physical pin 12. The helper:</p>
+          <ul class="plain-list">
+            <li>backs up the active boot config byte-for-byte to <code>~/.local/state/visual-guides/</code>;</li>
+            <li>adds a managed block with <code>dtoverlay=gpio-ir-tx,gpio_pin=18</code> (BCM numbering);</li>
+            <li>installs <code>/etc/udev/rules.d/70-visual-guides-ir-tx.rules</code>, which names the transmitter <code>/dev/van-ac-ir-tx</code>.</li>
+          </ul>
+          <p>It refuses if another owner holds GPIO18, a conflicting overlay exists, or a managed file has foreign contents. It doesn't load the overlay live, reboot or send IR.</p>
+        </li>
+
+        <li class="step" id="step-4">
+          <div class="step-head"><span class="step-num">4</span><h3>Reboot, then check the device</h3><label class="done"><input type="checkbox" data-check="4">Done</label></div>
+          <p>Finish backups and other active Pi work first: a reboot stops every service on the Pi, not just this one.</p>
+          <div class="code"><pre data-copy><code>sudo reboot</code></pre></div>
+          <p>Once it's back:</p>
+          <div class="code"><pre data-copy><code>ssh pi@vanpi.lan
+cd /home/pi/visual-guides/current
+python3 hardware_setup.py status</code></pre></div>
+          <p>Expect <code>/dev/van-ac-ir-tx</code> to resolve to a LIRC device owned by the <code>gpio-ir-tx</code> driver. Don't rely on <code>/dev/lirc0</code>: numbering can change once a receiver is added.</p>
+        </li>
+
+        <li class="step" id="step-5">
+          <div class="step-head"><span class="step-num">5</span><h3>Turn on transmission</h3><label class="done"><input type="checkbox" data-check="5">Done</label></div>
+          <div class="code"><pre data-copy><code>python3 hardware_setup.py activate --confirm-wiring</code></pre></div>
+          <p>Checks that <code>gpio-ir-tx</code> owns GPIO18 and that the device can transmit but not receive, installs the hardware drop-in for <code>visual-guides.service</code>, restarts only that service and waits for it to report hardware enabled. It sends nothing. If the service doesn't come back healthy, a newly installed drop-in is removed and preview mode is restored.</p>
+        </li>
+
+        <li class="step" id="step-6">
+          <div class="step-head"><span class="step-num">6</span><h3>Send one temperature-up</h3><label class="done"><input type="checkbox" data-check="6">Done</label></div>
+          <p>Have the A/C already running at a midrange setting with its display visible. Hold the LED close to the front receiver, out of bright sun. Send exactly one command and watch for the display change and beep. On the Pi:</p>
+          <div class="code"><pre data-copy><code>cd /home/pi/visual-guides/current
+python3 app.py --enable-hardware --send temp_up \
+  --token-file /home/pi/.config/visual-guides/api-token</code></pre></div>
+          <p>Or from the Mac, with the <a href="/first-test.txt">first-test script</a>, which runs the same command over SSH. Download it and read it:</p>
+          <div class="code"><pre data-copy><code>mkdir -p -m 700 /tmp/clip
+curl -so /tmp/clip/ac-first-test <span class="origin">http://vanpi.lan:8791</span>/first-test.txt
+cat /tmp/clip/ac-first-test</code></pre></div>
+          <p>Then run it:</p>
+          <div class="code"><pre data-copy><code>zsh /tmp/clip/ac-first-test</code></pre></div>
+          <p>Either way the send goes through the running service's API, so it can't overlap a browser send. It is never retried. <code>"delivery": "transmitted"</code> means <code>ir-ctl</code> finished, not that the A/C heard it; <code>confirmed</code> is always <code>false</code>.</p>
+        </li>
+
+        <li class="step" id="step-7">
+          <div class="step-head"><span class="step-num">7</span><h3>Test the rest, one at a time</h3><label class="done"><input type="checkbox" data-check="7">Done</label></div>
+          <p>Next <code>temp_down</code>, then each other command you need, one at a time, noting what the A/C does. Swap the name in the step 6 command; <code>python3 app.py --list-commands</code> lists them.</p>
+          <ul class="plain-list">
+            <li><strong>Power is a toggle.</strong> Two sends undo each other.</li>
+            <li><strong>Cool mode / start</strong> may also start the unit.</li>
+            <li><strong>Timer and sleep</strong> need extra care; their state isn't tracked.</li>
+            <li>A failed or timed-out send may still have emitted. Check the display before repeating.</li>
+          </ul>
+        </li>
+
+        <li class="step" id="step-8">
+          <div class="step-head"><span class="step-num">8</span><h3>Return to preview mode</h3><label class="done"><input type="checkbox" data-check="8">Done</label></div>
+          <div class="code"><pre data-copy><code>python3 hardware_setup.py deactivate</code></pre></div>
+          <p>Removes the hardware drop-in and restarts the service in preview mode; the guide stays up and the boot overlay stays installed. Do this before you disconnect or repurpose the circuit.</p>
+        </li>
+      </ol>
+
+      <!-- ============================== CONSOLE ============================== -->
+      <h2 id="console">Command console</h2>
+      <p>Each button POSTs <code>{"preview":true}</code> to this server's API and shows the frame it would transmit. This page never asks for a real send; use step 6 for that.</p>
+
+      <div class="console">
+        <div class="console-status" role="status">
+          <span>API <b id="st-api">checking…</b></span>
+          <span>Transmit <b id="st-hw">checking…</b></span>
+          <span>A/C state <b id="st-ac">unknown</b></span>
+        </div>
+        <div class="cmd-groups" id="cmd-groups" aria-label="A/C commands"></div>
+        <div class="result" id="result" aria-live="polite">
+          <p class="small">Loading the command catalog…</p>
+        </div>
+      </div>
+
+      <!-- ============================== PROTOCOL ============================== -->
+      <h2 id="protocol">Protocol</h2>
+      <p>The LED is only a light source; nothing of Yamaha's protocol carries over. The Linux <code>gpio-ir-tx</code> driver makes the 38 kHz carrier, and <code>ir-ctl</code> plays a reviewed raw waveform from the catalog. Python doesn't time pulses with sleeps.</p>
+
+      <h3>One frame per tap</h3>
+      <div class="frame" aria-label="Frame layout">
+        <div class="lead"><b>Leader</b><span>9.2 ms on, 4.5 ms off</span></div>
+        <div><b>08</b><span>address</span></div>
+        <div><b>F5</b><span>address</span></div>
+        <div><b>cmd</b><span>command</span></div>
+        <div><b>~cmd</b><span>inverse</span></div>
+        <div><b>end</b><span>mark</span></div>
+      </div>
+      <p class="small">Each byte is sent least-significant bit first. No held-key repeat frames.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Element</th><th class="num">Mark (carrier on)</th><th class="num">Space (off)</th></tr></thead>
+          <tbody>
+            <tr><td>Leader</td><td class="num">9,159 µs</td><td class="num">4,455 µs</td></tr>
+            <tr><td>0 bit</td><td class="num">639 µs</td><td class="num">486 µs</td></tr>
+            <tr><td>1 bit</td><td class="num">639 µs</td><td class="num">1,615 µs</td></tr>
+            <tr><td>End</td><td class="num">637 µs</td><td class="num">–</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">These are the measured timings from the Kenmore 253.79081 capture, not measurements from your Frigidaire.</p>
+
+      <h3>Bit order</h3>
+      <p>Legacy LIRC files print the frame MSB-first: <code>10 AF</code>, then each command byte bit-reversed. Linux's NECX scancode uses the logical bytes <code>08 F5 cmd</code>. Temperature up is LIRC <code>10AF708F</code> = Linux <code>necx:0x08f50e</code>. Handing the LIRC value to Linux unchanged reverses every bit.</p>
+
+      <h3>Command catalog</h3>
+      <div class="table-wrap">
+        <table class="stack kv">
+          <thead><tr><th>Command</th><th>API name</th><th class="num">Byte</th><th>Linux</th><th>LIRC</th><th>Notes</th></tr></thead>
+          <tbody id="catalog-rows"><tr><td colspan="6">Loading from <code>/api/ac/commands</code>…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="small">Built live from <code>ac_ir.py</code> through the API, then decoded from each waveform in your browser. Every entry is a compatibility candidate until it works on this A/C. There's no absolute-temperature or discrete on/off command in this set.</p>
+
+      <!-- ============================== API ============================== -->
+      <h2 id="api">API</h2>
+      <div class="table-wrap">
+        <table class="stack">
+          <thead><tr><th>Request</th><th>Returns</th></tr></thead>
+          <tbody>
+            <tr><td class="lead-cell"><code>GET /api/health</code></td><td data-label="Returns"><code>{"ok":true,"service":"visual-guides"}</code></td></tr>
+            <tr><td class="lead-cell"><code>GET /api/ac/status</code></td><td data-label="Returns"><code>hardware_enabled</code>, <code>ac_state</code> (always <code>"unknown"</code>), <code>state_note</code></td></tr>
+            <tr><td class="lead-cell"><code>GET /api/ac/commands</code></td><td data-label="Returns">The catalog: name, label, carrier, durations, Linux scancode, sources</td></tr>
+            <tr><td class="lead-cell"><code>POST /api/ac/commands/&lt;name&gt;</code></td><td data-label="Returns"><code>{"preview":true}</code> returns a dry run. <code>{"preview":false}</code> transmits, and needs hardware mode plus a bearer token.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="plain-list">
+        <li>POSTs need <code>Content-Type: application/json</code> and a body of exactly one boolean <code>preview</code> field, 256 bytes at most.</li>
+        <li>Previews need no token. Real sends need <code>Authorization: Bearer …</code> and a same-origin request; scripts may omit <code>Origin</code>.</li>
+        <li>Real sends are serialized and never retried, with a 1-second cooldown after every attempt, failures included.</li>
+        <li><code>delivery</code> is <code>dry_run</code> or <code>transmitted</code>; <code>confirmed</code> is always <code>false</code>. No A/C state is inferred.</li>
+      </ul>
+
+      <h3>Status codes</h3>
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><td class="num">200</td><td>Preview returned (<code>dry_run</code>)</td></tr>
+            <tr><td class="num">202</td><td>Transmitted, unconfirmed</td></tr>
+            <tr><td class="num">400</td><td>Body isn't valid JSON or isn't exactly <code>{"preview": boolean}</code></td></tr>
+            <tr><td class="num">401</td><td>Bearer token missing or wrong</td></tr>
+            <tr><td class="num">403</td><td>Cross-origin write</td></tr>
+            <tr><td class="num">404</td><td>Unknown command or endpoint</td></tr>
+            <tr><td class="num">409</td><td>Hardware transmission disabled (preview mode)</td></tr>
+            <tr><td class="num">413</td><td>Body length missing or over 256 bytes</td></tr>
+            <tr><td class="num">415</td><td>Content-Type isn't <code>application/json</code></td></tr>
+            <tr><td class="num">429</td><td>Inside the 1-second cooldown</td></tr>
+            <tr><td class="num">502</td><td><code>ir-ctl</code> failed. It may already have emitted, so check the A/C before retrying.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Examples</h3>
+      <div class="code"><pre data-copy><code>curl -s <span class="origin">http://vanpi.lan:8791</span>/api/ac/status
+curl -s -X POST <span class="origin">http://vanpi.lan:8791</span>/api/ac/commands/temp_up \
+  -H 'Content-Type: application/json' -d '{"preview":true}'</code></pre></div>
+      <p>On the Pi, in <code>/home/pi/visual-guides/current</code>, without a server:</p>
+      <div class="code"><pre data-copy><code>python3 app.py --list-commands
+python3 app.py --preview temp_up</code></pre></div>
+
+      <h3>Tokens and untrusted networks</h3>
+      <p>The token lives only in <code>/home/pi/.config/visual-guides/api-token</code> (mode 0600). It is never in static files, API responses, command arguments or deploy logs. The LAN endpoint is plain HTTP, so on a network you don't trust, tunnel over SSH and keep that Terminal open:</p>
+      <div class="code"><pre data-copy><code>ssh -N -L 8791:127.0.0.1:8791 pi@vanpi.lan</code></pre></div>
+      <p>Then use <code>http://localhost:8791</code>.</p>
+
+      <!-- ============================== TROUBLESHOOTING ============================== -->
+      <h2 id="troubleshooting">Troubleshooting</h2>
+      <dl class="symptoms">
+        <dt>No device, or permission denied</dt>
+        <dd>Run <code>python3 hardware_setup.py status</code>. The overlay needs a reboot after <code>configure</code>. Check the <code>/dev/van-ac-ir-tx</code> alias, the <code>gpio-ir-tx</code> driver, the udev rule and transmit capability before touching permissions. Don't make LIRC devices world-writable.</dd>
+        <dt>HTTP 409 on a real send</dt>
+        <dd>The service is still in preview mode. Run step 5.</dd>
+        <dt>A camera shows the LED, but the A/C ignores it</dt>
+        <dd>Get closer, aim at the front receiver and avoid bright sun. Check LED polarity, wiring and MOSFET drive. Try a single temperature step with the A/C on. A camera shows some IR light but can't check the carrier or the bits.</dd>
+        <dt>Not sure a send worked</dt>
+        <dd>Look at the A/C's display. An HTTP success only means <code>ir-ctl</code> finished, and a timeout can happen after emission started. Don't blindly repeat power or timer.</dd>
+        <dt>Every command is ignored</dt>
+        <dd>Check the optical waveform with a 38 kHz receiver. If the profile doesn't fit this unit, get or borrow the exact replacement remote, <strong>5304487535</strong>, and capture its commands. Replace the catalog in <code>ac_ir.py</code> only after comparing real captures.</dd>
+      </dl>
+
+      <h3>Bench acceptance</h3>
+      <ul class="bench" data-checklist="bench">
+        <li><label><input type="checkbox" data-check="parts">Actual MOSFET pins, LED polarity and series resistor verified</label></li>
+        <li><label><input type="checkbox" data-check="pins">GPIO18 still free, grounds common, no 5 V on GPIO</label></li>
+        <li><label><input type="checkbox" data-check="driver">Driver and transmit device recognized; hardware enabled on purpose</label></li>
+        <li><label><input type="checkbox" data-check="temp">One temperature-up and one temperature-down visibly accepted</label></li>
+        <li><label><input type="checkbox" data-check="others">Other needed commands tested one at a time, behavior written down</label></li>
+      </ul>
+      <p class="small">Ticks are saved in this browser only; they aren't an automatic check. <button type="button" class="text-button" data-clear="bench">Clear ticks</button></p>
+
+      <!-- ============================== SOURCES ============================== -->
+      <h2 id="sources">Sources &amp; confidence</h2>
+      <div class="table-wrap">
+        <table class="stack kv">
+          <thead><tr><th>Claim</th><th>Basis</th><th>Standing</th></tr></thead>
+          <tbody>
+            <tr><td class="lead-cell">FFRE08L3S15 takes remote 5304487535</td><td data-label="Basis">Parts-supplier compatibility list [1]</td><td data-label="Standing"><span class="tag">Supplier listing</span></td></tr>
+            <tr><td class="lead-cell">5304487535 is the RG15D/E-ELL family</td><td data-label="Basis">Replacement-remote supplier identification [3]</td><td data-label="Standing"><span class="tag">High, untested</span></td></tr>
+            <tr><td class="lead-cell">Address <code>08 F5</code> and all 11 command bytes</td><td data-label="Basis">Captured RG15D profile [2]</td><td data-label="Standing"><span class="tag ok">Matches capture</span></td></tr>
+            <tr><td class="lead-cell">Leader and bit timings</td><td data-label="Basis">Measured Kenmore 253.79081 capture [4]</td><td data-label="Standing"><span class="tag warn">Related model</span></td></tr>
+            <tr><td class="lead-cell">LIRC-to-Linux bit order</td><td data-label="Basis">Kernel protocol docs and NEC encoder [5]</td><td data-label="Standing"><span class="tag ok">Documented</span></td></tr>
+            <tr><td class="lead-cell">2N7000 at 3.3 V gate drive</td><td data-label="Basis">On-resistance is specified only above 3.3 V [8]</td><td data-label="Standing"><span class="tag warn">Bench-test</span></td></tr>
+            <tr><td class="lead-cell">Donor LED rating and wavelength</td><td data-label="Basis">The photo identifies the remote, not its emitter</td><td data-label="Standing"><span class="tag warn">Unknown</span></td></tr>
+            <tr><td class="lead-cell">Your A/C accepts these frames</td><td data-label="Basis">No optical measurement or acceptance test yet</td><td data-label="Standing"><span class="tag warn">Untested</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ol class="sources">
+        <li><a href="https://partsdr.com/part/5304487535-remote-control">Frigidaire 5304487535 replacement remote: compatibility list</a><span class="why">Lists FFRE08L3S15. Confirms the replacement part, not the IR waveform.</span></li>
+        <li><a href="https://github.com/Lucaslhm/Flipper-IRDB/blob/d126fb1b6f1e114c52b4a8c19839ea65e3a9c24d/ACs/Frigidaire/Frigidaire_RG15D_AC.ir">Frigidaire RG15D captured command profile (Flipper-IRDB, d126fb1)</a><span class="why">Contributed capture, CC0-1.0, pinned to one revision. Its address and all 11 commands agree with the catalog.</span></li>
+        <li><a href="https://www.replacementremotes.com/electrolux/buy-5304487535-frigidaire-5304487535-air-conditioner-unit-air-conditioner">5304487535 to RG15D/E-ELL remote-family listing</a><span class="why">Ties the exact replacement part to the captured remote family.</span></li>
+        <li><a href="https://lirc.sourceforge.net/remotes/Kenmore/Kenmore_253_79081">Measured Kenmore 253.79081 LIRC capture</a><span class="why">Contributed in 2014, recorded with a TSOP6238 on a Pi. Source of the raw timing and command mapping; a different appliance model.</span></li>
+        <li><a href="https://www.kernel.org/doc/html/latest/userspace-api/media/rc/rc-protos.html">Linux remote-control protocols and scancodes</a> · <a href="https://github.com/torvalds/linux/blob/master/drivers/media/rc/ir-nec-decoder.c">NEC encoder</a><span class="why">NECX addressing, bit order and carrier behavior.</span></li>
+        <li><a href="https://www.lirc.org/html/lircd.conf.html">LIRC configuration format</a> · <a href="https://manpages.debian.org/bookworm/ir-keytable/ir-ctl.1.en.html">ir-ctl manual (Debian)</a><span class="why">Legacy code representation and raw pulse/space sending.</span></li>
+        <li><a href="https://github.com/raspberrypi/firmware/blob/master/boot/overlays/README">Raspberry Pi overlay reference</a> · <a href="https://www.raspberrypi.com/documentation/computers/raspberry-pi.html">GPIO electrical guidance</a><span class="why"><code>gpio-ir-tx</code> parameters and 3.3 V GPIO. The Pi's installed overlay reference was also checked.</span></li>
+        <li><a href="https://www.onsemi.com/download/data-sheet/pdf/nds7002a-d.pdf">onsemi 2N7000 / NDS7002A datasheet</a> · <a href="https://www.vishay.com/en/product/82491/">Vishay TSOP38438 receiver family</a><span class="why">Identify your actual parts before relying on package pinouts or ratings.</span></li>
+        <li><strong>Local electronics inventory</strong><span class="why">Read-only check of the 35-record catalog at localhost:8767 on 2026-10-08. Record IDs are in the parts table; no stock counts were changed.</span></li>
+      </ol>
+    </main>
+  </div>
+</body>
 </html>

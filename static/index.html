@@ -1,22 +1,36 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Visual Guides &amp; Documentation</title>
-    <link rel="stylesheet" href="/style.css" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  </head>
-  <body>
-    <main class="library">
-      <h1>Visual Guides &amp; Documentation</h1>
-      <ul class="guide-list">
-        <li>
-          <a href="/guides/air-conditioner.html">A/C infrared controller</a>
-          <p>Frigidaire FFRE08L3S15 · Raspberry Pi GPIO18</p>
-          <span class="pill amber">Hardware testing pending</span>
-        </li>
-      </ul>
-    </main>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Visual Guides &amp; Documentation</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+  <main class="library">
+    <h1>Visual Guides &amp; Documentation</h1>
+
+    <ul class="guide-list">
+      <li class="guide-row guide-head" aria-hidden="true">
+        <span>Guide</span><span>Status</span><span>Updated</span>
+      </li>
+      <li class="guide-row">
+        <div>
+          <h2><a href="/guides/air-conditioner.html">Window A/C IR remote</a></h2>
+          <p>Frigidaire FFRE08L3S15 · Raspberry Pi 4 on GPIO18 · IR LED salvaged from a Yamaha remote</p>
+          <p class="guide-jump">
+            <a href="/guides/air-conditioner.html#parts">Parts</a>
+            <a href="/guides/air-conditioner.html#wiring">Wiring</a>
+            <a href="/guides/air-conditioner.html#setup">Pi setup</a>
+            <a href="/guides/air-conditioner.html#console">Console</a>
+            <a href="/guides/air-conditioner.html#api">API</a>
+          </p>
+        </div>
+        <div class="guide-meta"><span class="label">Status</span><span class="tag warn">Untested on the A/C</span></div>
+        <div class="guide-meta"><span class="label">Updated</span>2026-10-08</div>
+      </li>
+    </ul>
+  </main>
+</body>
 </html>

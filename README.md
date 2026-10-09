@@ -15,8 +15,11 @@ Python 3.10+ standard library only; no npm build, external fonts, or CDN.
   systemd activation/deactivation. Status and prepare are read-only.
 - `deploy.py` and `visual-guides.service`: separate immutable Pi releases and
   guarded systemd install; independent of the dashboard package deployer.
-- `static/`: guide index, A/C guide, wiring SVG, command console and
-  downloadable reference text. This is the only HTTP-served directory.
+- `static/`: guide index, A/C guide and first-test reference script. Shared
+  styles (light and dark) are in `assets/site.css`; `assets/ac-guide.js` owns the
+  step checklists, copy buttons, LED current estimate, preview-only console and
+  the catalog table built from `/api/ac/commands`. This is the only HTTP-served
+  directory.
 - `tests/test_app.py`, `test_deploy.py`, `test_hardware_setup.py`: behavioral and
   deployment-contract tests.
 
@@ -101,8 +104,9 @@ IR. To restore preview-only API operation:
 python3 hardware_setup.py deactivate
 ```
 
-The boot overlay stays installed. The guide's first-test and token-copy scripts
-are reference text, never secrets. The token lives only at
+The boot overlay stays installed. The guide's first-test script is reference
+text, never a secret. The browser console only previews; real sends go through
+the CLI on the Pi or the first-test script. The token lives only at
 `/home/pi/.config/visual-guides/api-token`, mode 0600, and is never included in
 static assets, API responses, command arguments or deployment logs.
 
@@ -150,13 +154,13 @@ From this directory:
 ```sh
 python3 -m unittest discover -s tests -v
 python3 -m unittest test_deploy test_hardware_setup -v
-node --check static/guide.js
+node --check static/assets/ac-guide.js
 ```
 
 Tests exercise real local HTTP calls with an injected recording transport; they
 never emit IR. Hardware configure/activate branches are tested with mocked
 operating-system boundaries. Browser QA covers desktop and 390px mobile layouts,
-preview buttons, token gating, source links and script/style loading. Live
+preview buttons, source links and script/style loading. Live
 validation checks systemd boot enablement, guide/API health and preview mode.
 Actual LED performance, udev matching after reboot and A/C acceptance require
 owner bench validation.
