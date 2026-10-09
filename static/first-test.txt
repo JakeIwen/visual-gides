@@ -1,0 +1,4 @@
+#!/bin/zsh
+set -eux -o pipefail
+/usr/bin/ssh pi@vanpi.lan \
+  'cd /home/pi/visual-guides/current && python3 app.py --enable-hardware --send temp_up --token-file /home/pi/.config/visual-guides/api-token'

@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 900 435"
+              role="img"
+              aria-labelledby="circuit-title circuit-desc"
+            >
+              <title id="circuit-title">Low-current IR LED driver wiring</title>
+              <desc id="circuit-desc">
+                Pi physical pin 2 five volts through 680 ohms then LED anode.
+                LED cathode to 2N7000 drain. Source to Pi physical pin 6 ground.
+                GPIO18 physical pin 12 through 100 ohms to gate. Gate through
+                100 kiloohms to ground. Identify transistor pins from its actual
+                datasheet.
+              </desc>
+              <rect
+                x="22"
+                y="25"
+                width="218"
+                height="348"
+                rx="10"
+                fill="#e7edda"
+                stroke="#71886d"
+              />
+              <text x="45" y="60" font-size="22" fill="#1c352e">
+                Raspberry Pi 4
+              </text>
+              <g font-family="monospace" font-size="14" fill="#1c352e">
+                <text x="44" y="97">5 V · physical 2</text>
+                <text x="44" y="222">GPIO18 · physical 12</text>
+                <text x="44" y="342">GND · physical 6</text>
+              </g>
+              <g fill="none" stroke-width="3" stroke-linejoin="round">
+                <path d="M215 107H490V125" stroke="#a44c34" />
+                <rect x="479" y="125" width="22" height="60" stroke="#a44c34" />
+                <path d="M490 185V203" stroke="#a44c34" />
+                <path d="M478 203H502L490 225Z" stroke="#a44c34" />
+                <path d="M476 228H504M490 228V268" stroke="#a44c34" />
+                <path d="M214 236H308M363 236H425V282H459" stroke="#467687" />
+                <rect x="308" y="226" width="55" height="20" stroke="#467687" />
+                <path
+                  d="M460 262V305M475 266V301M490 268H475M475 298H490V345H214"
+                  stroke="#254e41"
+                />
+                <path d="M425 282V297M425 327V345" stroke="#467687" />
+                <rect x="415" y="297" width="20" height="30" stroke="#467687" />
+                <path
+                  d="M500 199L520 181M512 179L522 179V189M512 210L532 192M524 190L534 190V200"
+                  stroke="#b18a29"
+                />
+              </g>
+              <g font-size="15" fill="#1c352e">
+                <text x="516" y="158">680 Ω · start here</text>
+                <text x="539" y="208">Salvaged IR LED</text>
+                <text x="537" y="230" font-size="12">
+                  anode above / cathode below
+                </text>
+                <text x="312" y="217">100 Ω</text>
+                <text x="306" y="315">100 kΩ</text>
+                <text x="514" y="283">2N7000</text>
+                <text x="492" y="263" font-size="12">D</text>
+                <text x="444" y="255" font-size="12">G</text>
+                <text x="501" y="317" font-size="12">S</text>
+              </g>
+              <g fill="#254e41">
+                <circle cx="425" cy="282" r="4" />
+                <circle cx="425" cy="345" r="4" />
+              </g>
+              <text x="566" y="310" font-size="13" fill="#58665e">
+                Symbol labels are electrical pins.
+              </text>
+              <text x="566" y="332" font-size="13" fill="#58665e">
+                Do not infer package leg order.
+              </text>
+              <text
+                x="45"
+                y="411"
+                font-family="monospace"
+                font-size="13"
+                fill="#58665e"
+              >
+                COMMON GROUND · ACTIVE HIGH · NEVER CONNECT 5 V TO GPIO18
+              </text>
+            </svg>

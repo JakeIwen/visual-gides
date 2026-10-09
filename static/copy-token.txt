@@ -1,0 +1,4 @@
+#!/bin/zsh
+set -eux -o pipefail
+/usr/bin/ssh pi@vanpi.lan \
+  'cat /home/pi/.config/visual-guides/api-token' | /usr/bin/pbcopy

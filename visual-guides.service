@@ -1,0 +1,20 @@
+[Unit]
+Description=Visual wiring guides
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/visual-guides/current
+ExecStart=/usr/bin/python3 /home/pi/visual-guides/current/app.py --bind 0.0.0.0 --port 8791 --static-root /home/pi/visual-guides/current/static --token-file /home/pi/.config/visual-guides/api-token
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
