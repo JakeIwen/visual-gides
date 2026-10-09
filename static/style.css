@@ -48,7 +48,7 @@ summary:focus-visible {
   outline-offset: 4px;
 }
 .topbar {
-  padding: 23px 5vw;
+  padding: 12px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -56,92 +56,13 @@ summary:focus-visible {
   gap: 24px;
 }
 .brand {
-  text-decoration: none;
-  font-weight: 800;
-  font-size: 25px;
-  letter-spacing: -1px;
-}
-.brand span {
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0;
-  margin-left: 22px;
-}
-.eyebrow {
-  font:
-    600 11px/1.4 ui-monospace,
-    SFMono-Regular,
-    monospace;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 600;
 }
 .library {
   max-width: 1100px;
-  margin: 70px auto;
+  margin: 28px auto;
   padding: 0 30px;
-}
-.library h1 {
-  font:
-    500 clamp(48px, 7vw, 86px)/1.03 Georgia,
-    serif;
-  letter-spacing: -3px;
-  margin: 20px 0;
-}
-.library h1 em {
-  font-weight: 400;
-}
-.lede {
-  font-size: 18px;
-  max-width: 620px;
-  color: var(--muted);
-}
-.guide-card {
-  display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  margin-top: 48px;
-  background: var(--white);
-  text-decoration: none;
-  border: 1px solid var(--line);
-  min-height: 305px;
-  border-radius: 4px;
-  overflow: hidden;
-}
-.card-art {
-  background: var(--green);
-  color: var(--lime);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 26px;
-  background-image: radial-gradient(#ffffff22 1px, transparent 1px);
-  background-size: 18px 18px;
-}
-.chip {
-  border: 2px solid;
-  border-radius: 8px;
-  font: 500 38px Georgia;
-  padding: 12px 25px;
-}
-.signal {
-  font: 30px monospace;
-  letter-spacing: 6px;
-}
-.ac-icon {
-  font-size: 60px;
-}
-.card-copy {
-  padding: 32px;
-  position: relative;
-}
-.card-copy h2 {
-  font:
-    500 36px/1.12 Georgia,
-    serif;
-  margin: 12px 0;
-}
-.card-copy p {
-  max-width: 410px;
-  color: var(--muted);
 }
 .pill {
   display: inline-block;
@@ -156,35 +77,13 @@ summary:focus-visible {
   background: #f4e4c7;
   color: var(--amber);
 }
-.card-arrow {
-  position: absolute;
-  right: 30px;
-  bottom: 25px;
-  font-size: 26px;
-}
-.library-foot {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 30px;
-}
-footer {
-  display: flex;
-  justify-content: space-between;
-  padding: 24px 5vw;
-  border-top: 1px solid var(--line);
-  font:
-    10px ui-monospace,
-    monospace;
-  letter-spacing: 1px;
-  gap: 16px;
-}
 .guide-layout {
   max-width: 1370px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 205px minmax(0, 1fr);
-  gap: 50px;
-  padding: 45px 35px 90px;
+  gap: 32px;
+  padding: 24px 30px 60px;
 }
 .toc {
   position: sticky;
@@ -201,22 +100,9 @@ footer {
 .toc a:hover {
   color: var(--ink);
 }
-.toc .eyebrow {
-  margin-bottom: 18px;
-}
 .guide-main {
   min-width: 0;
   max-width: 980px;
-}
-.guide-header h1 {
-  font:
-    500 clamp(40px, 5vw, 63px)/1.06 Georgia,
-    serif;
-  letter-spacing: -1.5px;
-  margin: 18px 0;
-}
-.guide-header .lede {
-  max-width: 770px;
 }
 .facts {
   display: grid;
@@ -224,7 +110,7 @@ footer {
   gap: 1px;
   border: 1px solid var(--line);
   background: var(--line);
-  margin: 30px 0;
+  margin: 18px 0;
 }
 .facts div {
   padding: 16px;
@@ -252,28 +138,47 @@ footer {
   margin: 0;
 }
 .section {
-  padding-top: 40px;
-  margin-top: 16px;
+  padding-top: 28px;
+  margin-top: 8px;
 }
 .section-title {
   display: flex;
   align-items: baseline;
   gap: 15px;
   border-bottom: 1px solid var(--line);
-  padding-bottom: 15px;
-  margin-bottom: 24px;
+  padding-bottom: 10px;
+  margin-bottom: 16px;
 }
-.section-title span {
-  font:
-    12px ui-monospace,
-    monospace;
-  color: var(--muted);
+h1 {
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1.25;
+  margin: 0 0 18px;
 }
 h2 {
-  font:
-    500 31px/1.2 Georgia,
-    serif;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.35;
   margin: 0;
+}
+.guide-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.guide-list li {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.guide-list a {
+  font-size: 18px;
+  font-weight: 600;
+}
+.guide-list p {
+  margin: 5px 0 10px;
+  font-size: 14px;
+  color: var(--muted);
 }
 h3 {
   font-size: 17px;
@@ -375,7 +280,7 @@ pre code {
   padding: 0 0 20px 10px;
 }
 .steps > li::marker {
-  font: bold 16px Georgia;
+  font-weight: 600;
   color: var(--green);
 }
 .steps h3 {
@@ -520,9 +425,6 @@ button:disabled {
   .toc a {
     padding: 0;
   }
-  .toc .eyebrow {
-    display: none;
-  }
   .two-col {
     grid-template-columns: 1fr;
   }
@@ -531,28 +433,9 @@ button:disabled {
   .topbar {
     padding: 16px 20px;
   }
-  .topbar > .eyebrow {
-    display: none;
-  }
-  .brand span {
-    font-size: 11px;
-    margin-left: 12px;
-  }
   .library {
-    margin: 42px auto;
+    margin: 24px auto;
     padding: 0 20px;
-  }
-  .library h1 {
-    letter-spacing: -2px;
-  }
-  .guide-card {
-    grid-template-columns: 1fr;
-  }
-  .card-art {
-    min-height: 180px;
-  }
-  .card-copy {
-    padding: 24px;
   }
   .facts {
     grid-template-columns: 1fr;
@@ -576,18 +459,12 @@ button:disabled {
   .section {
     padding-top: 25px;
   }
-  footer {
-    flex-direction: column;
-  }
   .guide-layout {
     padding-left: 18px;
     padding-right: 18px;
   }
   .section-title {
     gap: 10px;
-  }
-  h2 {
-    font-size: 27px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -598,8 +475,7 @@ button:disabled {
 @media print {
   .topbar,
   .toc,
-  .console,
-  footer {
+  .console {
     display: none;
   }
   .guide-layout {

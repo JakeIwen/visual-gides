@@ -15,13 +15,15 @@ Python 3.10+ standard library only; no npm build, external fonts, or CDN.
   systemd activation/deactivation. Status and prepare are read-only.
 - `deploy.py` and `visual-guides.service`: separate immutable Pi releases and
   guarded systemd install; independent of the dashboard package deployer.
-- `static/`: library landing page, A/C guide, wiring SVG, command console and
+- `static/`: guide index, A/C guide, wiring SVG, command console and
   downloadable reference text. This is the only HTTP-served directory.
 - `tests/test_app.py`, `test_deploy.py`, `test_hardware_setup.py`: behavioral and
   deployment-contract tests.
 
-To add a guide, add its page under `static/guides/` and a card in
-`static/index.html`. Keep hardware-specific APIs explicit.
+To add a guide, add its page under `static/guides/` and a list entry in
+`static/index.html`. Keep hardware-specific APIs explicit. Pages use plain
+headings and show reference content immediately, without slogans or promotional
+copy.
 
 ## Run locally
 

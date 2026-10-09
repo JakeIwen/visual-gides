@@ -10,29 +10,20 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/"
-        >V/G <span>Visual Guides & Documentation</span></a
-      ><span class="eyebrow">01 / CLIMATE CONTROL</span>
+      <a class="brand" href="/">Visual Guides &amp; Documentation</a>
     </header>
     <div class="guide-layout">
       <nav class="toc" aria-label="Guide sections">
-        <p class="eyebrow">THE BUILD</p>
-        <a href="#overview">Overview</a><a href="#parts">01 · Gather parts</a
-        ><a href="#wiring">02 · Wire the emitter</a
-        ><a href="#setup">03 · Set up the Pi</a
-        ><a href="#try">04 · Test a command</a
-        ><a href="#protocol">05 · Protocol & API</a
-        ><a href="#troubleshooting">06 · Troubleshooting</a
-        ><a href="#sources">Sources & confidence</a>
+        <a href="#overview">Overview</a><a href="#parts">Parts</a
+        ><a href="#wiring">Wiring</a><a href="#setup">Pi setup</a
+        ><a href="#try">Command console</a
+        ><a href="#protocol">IR protocol and API</a
+        ><a href="#troubleshooting">Troubleshooting</a
+        ><a href="#sources">Sources and compatibility</a>
       </nav>
       <main class="guide-main">
         <header class="guide-header" id="overview">
-          <p class="eyebrow">RASPBERRY PI 4 / SALVAGED IR / FRIGIDAIRE</p>
-          <h1>A new remote<br />for the A/C.</h1>
-          <p class="lede">
-            Keep the Yamaha LED. Let the Pi speak the A/C’s language. Start with
-            a low-current emitter, then validate one command at a time.
-          </p>
+          <h1>A/C infrared controller</h1>
           <div class="facts">
             <div>
               <small>Target appliance</small><strong>FFRE08L3S15</strong>
@@ -48,22 +39,20 @@
           </div>
           <aside class="notice">
             <p>
-              <strong>Software ready; hardware validation remains.</strong> The
-              API starts in preview mode. The command table matches a captured
-              Frigidaire RG15D remote, with timings from a related Kenmore A/C.
-              Reception has not been confirmed on your exact unit. A successful
-              send reports transmission, never the A/C’s actual state.
+              <strong>Hardware testing pending.</strong> The API starts in
+              preview mode. The command table matches a captured Frigidaire
+              RG15D remote, with timings from a related Kenmore A/C. Reception
+              has not been confirmed on your exact unit. A successful send
+              reports transmission, never the A/C’s actual state.
             </p>
           </aside>
           <div class="page-links">
-            <a href="#try">Open the command console ↓</a
-            ><a href="/">All visual guides ↗</a>
+            <a href="#try">Command console</a><a href="/">Guide index</a>
           </div>
         </header>
         <section id="parts" class="section">
           <div class="section-title">
-            <span>01</span>
-            <h2>Gather what you have.</h2>
+            <h2>Parts</h2>
           </div>
           <p>
             Your electronics catalog was checked on October 8, 2026. These
@@ -163,7 +152,7 @@
           </div>
           <div class="two-col">
             <div class="panel">
-              <h3>Check your supplies / obtain</h3>
+              <h3>Additional supplies</h3>
               <p>
                 <strong>680 Ω, 100 Ω and 100 kΩ resistors</strong>, ¼ W is
                 sufficient. Optional 330 Ω for later measured testing. A
@@ -176,7 +165,7 @@
               </p>
             </div>
             <div class="panel">
-              <h3>Helpful, not required</h3>
+              <h3>Optional equipment</h3>
               <p>
                 A solderless breadboard; a
                 <strong>38 kHz demodulating receiver</strong> such as TSOP38438
@@ -193,8 +182,7 @@
         </section>
         <section id="wiring" class="section">
           <div class="section-title">
-            <span>02</span>
-            <h2>Wire the emitter.</h2>
+            <h2>Wiring</h2>
           </div>
           <p>
             Use a transistor as a low-side switch. The Pi pin controls the gate;
@@ -241,7 +229,7 @@
               </tbody>
             </table>
           </div>
-          <h3>Identify first, then apply power</h3>
+          <h3>Component identification and current limits</h3>
           <p>
             Use a multimeter diode test to identify the emitter’s polarity and
             forward voltage. Salvaged legs may have been cut, so lead length is
@@ -274,8 +262,7 @@
         </section>
         <section id="setup" class="section">
           <div class="section-title">
-            <span>03</span>
-            <h2>Set up the Pi.</h2>
+            <h2>Pi setup</h2>
           </div>
           <p>
             The guide server and API can run before the circuit exists. Hardware
@@ -378,15 +365,14 @@ python3 hardware_setup.py status</code></pre>
         </section>
         <section id="try" class="section">
           <div class="section-title">
-            <span>04</span>
-            <h2>Try one command.</h2>
+            <h2>Command console</h2>
           </div>
           <div class="console">
             <div class="status-line">
               <div>
                 <strong>Infrared command console</strong>
                 <div class="small">
-                  One tap → one frame · no automatic retry
+                  Each request sends one frame. Failed sends are not retried.
                 </div>
               </div>
               <span class="pill" id="mode-status">Checking API…</span>
@@ -433,8 +419,7 @@ python3 hardware_setup.py status</code></pre>
         </section>
         <section id="protocol" class="section">
           <div class="section-title">
-            <span>05</span>
-            <h2>The language on the wire.</h2>
+            <h2>IR protocol and API</h2>
           </div>
           <p>
             The emitter is just a light source; it does not retain Yamaha’s
@@ -444,7 +429,7 @@ python3 hardware_setup.py status</code></pre>
           </p>
           <div class="two-col">
             <div class="panel">
-              <h3>One tap, 32 bits</h3>
+              <h3>Frame timing</h3>
               <p>
                 <strong>38 kHz carrier.</strong> Measured leader: 9,159 µs on /
                 4,455 µs off. A bit is a 639 µs mark, followed by 486 µs for 0
@@ -457,7 +442,7 @@ python3 hardware_setup.py status</code></pre>
               </p>
             </div>
             <div class="panel">
-              <h3>Bit order matters</h3>
+              <h3>Bit order</h3>
               <p>
                 Legacy LIRC displays <code>10 AF CC ~CC</code> in MSB order. The
                 equivalent logical NEC bytes are
@@ -554,8 +539,7 @@ python3 hardware_setup.py status</code></pre>
         </section>
         <section id="troubleshooting" class="section">
           <div class="section-title">
-            <span>06</span>
-            <h2>When nothing happens.</h2>
+            <h2>Troubleshooting</h2>
           </div>
           <div class="two-col">
             <div class="panel">
@@ -622,8 +606,7 @@ python3 hardware_setup.py status</code></pre>
         </section>
         <section id="sources" class="section">
           <div class="section-title">
-            <span>↗</span>
-            <h2>Sources & confidence.</h2>
+            <h2>Sources and compatibility</h2>
           </div>
           <ol class="sources">
             <li>
@@ -736,8 +719,5 @@ python3 hardware_setup.py status</code></pre>
         </section>
       </main>
     </div>
-    <footer>
-      VANPI · VISUAL GUIDES <span>BUILT TO BE CHECKED AT THE BENCH</span>
-    </footer>
   </body>
 </html>
