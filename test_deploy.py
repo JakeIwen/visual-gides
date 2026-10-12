@@ -1,4 +1,6 @@
 import importlib.util
+from contextlib import contextmanager
+import io
 from pathlib import Path
 import tempfile
 import unittest
@@ -12,6 +14,72 @@ SPEC.loader.exec_module(deploy)
 
 
 class DeployTests(unittest.TestCase):
+    @contextmanager
+    def installed_project(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            source = workspace / "source"
+            source.mkdir()
+            (source / "app.py").write_text("pass\n")
+            (source / "visual-guides.service").write_text(deploy.UNIT_TEMPLATE)
+            manifest = deploy.build_manifest(source)
+            root = workspace / "live"
+            releases = root / "releases"
+            releases.mkdir(parents=True)
+            deploy.extract_release(io.BytesIO(deploy.make_archive(source, manifest)),
+                                   manifest, releases / manifest["release"])
+            (releases / ("b" * 24)).mkdir()
+            (root / "current").symlink_to(f"releases/{manifest['release']}")
+            (root / "previous").symlink_to("releases/" + "b" * 24)
+            marker = root / ".managed-by-visual-guides-deploy"
+            marker.write_text("schema=1\n")
+            unit = workspace / "visual-guides.service"
+            unit.write_text(deploy.UNIT_TEMPLATE)
+
+            def systemctl(*args, **kwargs):
+                return mock.Mock(stdout={"is-active": "active", "is-enabled": "enabled"}
+                                 .get(args[0], ""), returncode=0)
+
+            with mock.patch.multiple(deploy, ROOT=root, RELEASES=releases,
+                                     CURRENT=root / "current", PREVIOUS=root / "previous",
+                                     UNIT_PATH=unit, OWNER_MARKER=marker), \
+                    mock.patch.object(deploy, "systemctl", side_effect=systemctl) as system, \
+                    mock.patch.object(deploy, "listener_owner", return_value="owned listener"):
+                yield manifest, root, system
+
+    def test_unchanged_healthy_deployment_preserves_rollback_without_restart(self):
+        with self.installed_project() as (manifest, root, system), \
+                mock.patch.object(deploy, "health_ok", return_value=True), \
+                mock.patch.object(deploy, "ensure_private_token") as token:
+            previous = (root / "previous").readlink()
+            result = deploy.remote_apply(manifest)
+            self.assertEqual(result["current"], f"releases/{manifest['release']}")
+            self.assertEqual((root / "previous").readlink(), previous)
+            self.assertEqual([call.args[0] for call in system.call_args_list],
+                             ["is-active", "is-enabled"])
+            token.assert_not_called()
+
+    def test_unchanged_deployment_still_rejects_tampered_installed_content(self):
+        with self.installed_project() as (manifest, root, system), \
+                mock.patch.object(deploy, "health_ok", return_value=True) as health:
+            (root / "current" / "app.py").write_text("unexpected code\n")
+            with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                deploy.remote_apply(manifest)
+            health.assert_not_called()
+            self.assertEqual([call.args[0] for call in system.call_args_list],
+                             ["is-active", "is-enabled"])
+
+    def test_repairing_same_release_keeps_prior_rollback(self):
+        with self.installed_project() as (manifest, root, system), \
+                mock.patch.object(deploy, "health_ok", side_effect=[False, True]), \
+                mock.patch.object(deploy, "ensure_private_token"), \
+                mock.patch.object(deploy.pwd, "getpwnam"), \
+                mock.patch.object(deploy.os, "chown"):
+            previous = (root / "previous").readlink()
+            deploy.remote_apply(manifest)
+            self.assertEqual((root / "previous").readlink(), previous)
+            self.assertEqual(sum(call.args[0] == "restart" for call in system.call_args_list), 1)
+
     def test_artifact_allowlist_excludes_tests_docs_and_secrets(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

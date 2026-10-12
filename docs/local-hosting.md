@@ -1,14 +1,20 @@
 # Mac hosting
 
 Visual Guides uses `http://127.0.0.1:8792` on the Mac. It serves the checkout
-directly, so refreshing a page shows saved HTML/CSS/JS edits. Python changes
-require `npm run service:restart`. The separate Pi copy stays on port 8791 and
-updates only through `python3 deploy.py apply`.
+directly, so refreshing a page shows saved HTML/CSS/JS edits. Run `npm run deploy`
+after editing to validate, reload Mac Python and deploy to the Pi on port 8791.
+For Mac-only Python updates, use `npm run service:restart`.
 
 The controller follows the ProMaster and LionFeather launchd pattern, adapted
 into the `local_service` package. There are no runtime third-party dependencies.
 The Mac worker is loopback-only and always uses preview mode; it never enables
 IR transmission or reads the Pi's token.
+
+The Mac boot service was verified installed and enabled on October 12, 2026.
+The combined deployment command demonstrated a graceful exit followed by a new
+launchd PID and instance, with HTTP/ownership agreement. Routine edits need
+`npm run deploy`, not another installation. Inspect current state with
+`npm run service:status`.
 
 ## First installation
 

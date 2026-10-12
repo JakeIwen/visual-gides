@@ -4,6 +4,9 @@
   "version": "1.0.0",
   "scripts": {
     "test": "python3 -m unittest discover -s tests -v && python3 -m unittest test_deploy test_hardware_setup -v && node --check static/assets/ac-guide.js && node --check static/assets/mwan3-guide.js",
+    "deploy": "npm run deploy:check && npm test && npm run service:restart && npm run deploy:pi && npm run service:status",
+    "deploy:check": "npm run service:status && .venv/bin/python deploy.py check",
+    "deploy:pi": ".venv/bin/python deploy.py apply",
     "service:prepare": ".venv/bin/python -m local_service prepare",
     "service:install": ".venv/bin/python -m local_service install --verify",
     "service:status": ".venv/bin/python -m local_service status",

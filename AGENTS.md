@@ -25,6 +25,9 @@ The Pi serves port 8791 using `/home/pi/visual-guides/current`; the Mac serves
 loopback port 8792 using `system/com.jacobr.visual-guides`. See
 `docs/local-hosting.md`. Inspect live state before deployment. Never edit an
 immutable Pi release, copy runtime state into Git, or expose tokens in output.
+Both boot services were verified installed/enabled on October 12, 2026; Mac
+KeepAlive recovery was proven through a controlled graceful restart. Reinspect
+live state, and do not reinstall a healthy service for routine edits.
 
 The Mac is always preview-only. Keep Pi transmission disabled unless explicitly
 requested and hardware verified. GPIO17 belongs to a different service. A send
@@ -33,6 +36,13 @@ does not confirm appliance state; preserve the no-retry behavior.
 Use the scoped Pi deployer here. Dashboard project links belong to
 `scripts/pi/apps/van_dashboard/frontend/src/features/projects/catalog.ts`;
 preserve user-added links in its runtime StateStore.
+
+`npm run deploy` is the combined Mac/Pi workflow: check both hosts, run tests,
+gracefully restart Mac Python, apply the Pi release, verify Mac supervision.
+`npm run deploy:check` is read-only; `npm run deploy:pi` targets only the Pi.
+Reuse those paths for routine publication. A healthy unchanged Pi release must
+remain a no-op, preserving the previous-release rollback link. Static Mac edits
+are visible on refresh; there is no background auto-deployer.
 
 Keep pages as plain reference tools: normal headings, content first, no hero or
 marketing copy. Add a directory entry and Source/History links for each guide.

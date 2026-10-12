@@ -53,13 +53,39 @@ Use `git log --follow -- static/guides/<name>.html` for local page history.
 Shared styles and guide-specific JavaScript remain under `static/assets/`.
 
 The Mac serves current working files; the Pi serves the last deployed release.
-After reviewing an edit, run `npm test`, commit it, then use the scoped deployer
-below to update the Pi. Changes to Python serving code also need
-`npm run service:restart` on the Mac. No browser content editor is required.
+After reviewing an edit, use the combined deployment command below. It also
+reloads Python on the Mac. Deployment uses your current working files and does
+not commit, push, or pull Git changes; keep source history with your usual Git
+workflow.
 
 For continuous Mac hosting, see [Mac hosting](docs/local-hosting.md). Its
 launchd service starts at boot, runs preview-only on loopback port 8792, and
 supports `npm run service:status` and `npm run service:verify`.
+
+## Deploy to both hosts
+
+From `~/dev/visual-guides`:
+
+```sh
+npm run deploy
+```
+
+This checks the installed Mac service and the Pi deployment first, runs all
+tests and JavaScript syntax checks, gracefully restarts the Mac through launchd,
+deploys an immutable Pi release, and verifies the Mac is still supervised.
+Both services remain enabled at boot. An unchanged, healthy Pi release is
+verified without restarting it or replacing its previous-release rollback link.
+
+The Mac service must already be installed; the Pi must be reachable over SSH at
+`pi@vanpi.lan`. Missing supervision or failed preflight stops the command before
+deployment. Later failures stop the sequence and return nonzero. The two hosts
+are not one atomic transaction: if Pi deployment fails, the Mac may already be
+updated; the Pi deployer retains its existing rollback behavior. Fix the reported
+problem and rerun the same command.
+
+For read-only host checks, use `npm run deploy:check`. For a Pi-only deployment,
+use `npm run deploy:pi`. Mac HTML/CSS/JS edits appear on refresh immediately;
+there is no automatic save watcher, GitHub poller or background Pi deployment.
 
 ## Run locally
 

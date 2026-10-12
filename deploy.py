@@ -312,6 +312,12 @@ def remote_apply(manifest):
     if sha256(UNIT_TEMPLATE.encode()) != manifest["unit_sha256"]:
         raise ValueError("embedded service unit differs from manifest")
     before = inspect_remote(manifest)
+    target = f"releases/{manifest['release']}"
+    if (before["current"] == target and before["unit_sha256"] == manifest["unit_sha256"]
+            and before["active"] == "active" and before["enabled"] == "enabled"
+            and health_ok()):
+        # inspect_remote verified every installed file before this no-op.
+        return before
     prior_unit = UNIT_PATH.read_bytes() if before["unit_sha256"] else None
     release = RELEASES / manifest["release"]
     if release.exists():
@@ -333,9 +339,9 @@ def remote_apply(manifest):
         OWNER_MARKER.chmod(0o644)
     ensure_private_token()
     try:
-        if before["current"]:
+        if before["current"] and before["current"] != target:
             replace_link(PREVIOUS, before["current"])
-        replace_link(CURRENT, f"releases/{manifest['release']}")
+        replace_link(CURRENT, target)
         unit_bytes = UNIT_TEMPLATE.encode()
         temporary = UNIT_PATH.with_name(f".{UNIT_PATH.name}.{os.getpid()}.tmp")
         temporary.write_bytes(unit_bytes)
