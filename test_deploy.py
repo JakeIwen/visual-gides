@@ -71,7 +71,7 @@ class DeployTests(unittest.TestCase):
 
     def test_repairing_same_release_keeps_prior_rollback(self):
         with self.installed_project() as (manifest, root, system), \
-                mock.patch.object(deploy, "health_ok", side_effect=[False, True]), \
+                mock.patch.object(deploy, "health_ok", side_effect=[False, True]) as health, \
                 mock.patch.object(deploy, "ensure_private_token"), \
                 mock.patch.object(deploy.pwd, "getpwnam"), \
                 mock.patch.object(deploy.os, "chown"):
@@ -79,6 +79,7 @@ class DeployTests(unittest.TestCase):
             deploy.remote_apply(manifest)
             self.assertEqual((root / "previous").readlink(), previous)
             self.assertEqual(sum(call.args[0] == "restart" for call in system.call_args_list), 1)
+            self.assertEqual(health.call_args_list, [mock.call(attempts=1), mock.call()])
 
     def test_artifact_allowlist_excludes_tests_docs_and_secrets(self):
         with tempfile.TemporaryDirectory() as directory:

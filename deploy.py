@@ -266,9 +266,9 @@ def ensure_private_token():
     TOKEN.chmod(0o600)
 
 
-def health_ok():
+def health_ok(attempts=20):
     import urllib.request
-    for _ in range(20):
+    for _ in range(attempts):
         try:
             with urllib.request.urlopen(f"http://127.0.0.1:{PORT}/api/health", timeout=2) as response:
                 body = json.loads(response.read())
@@ -315,7 +315,7 @@ def remote_apply(manifest):
     target = f"releases/{manifest['release']}"
     if (before["current"] == target and before["unit_sha256"] == manifest["unit_sha256"]
             and before["active"] == "active" and before["enabled"] == "enabled"
-            and health_ok()):
+            and health_ok(attempts=1)):
         # inspect_remote verified every installed file before this no-op.
         return before
     prior_unit = UNIT_PATH.read_bytes() if before["unit_sha256"] else None
