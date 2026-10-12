@@ -1,7 +1,13 @@
 # Visual Guides & Documentation
 
-Local documentation library and guarded A/C infrared controller, hosted on
-[vanpi.lan:8791](http://vanpi.lan:8791).
+Local documentation library and guarded A/C infrared controller.
+
+- Mac: [localhost:8792](http://127.0.0.1:8792).
+- Pi: [vanpi.lan:8791](http://vanpi.lan:8791).
+- Source: [JakeIwen/visual-gides](https://github.com/JakeIwen/visual-gides).
+
+This standalone repository retains the guide history extracted from
+`JakeIwen/scripts`. The checkout is `~/dev/visual-guides`.
 
 - [Window A/C IR remote](http://vanpi.lan:8791/guides/air-conditioner.html)
 - [mwan3-adaptive](http://vanpi.lan:8791/guides/mwan3-adaptive.html): illustrated
@@ -10,6 +16,7 @@ Local documentation library and guarded A/C infrared controller, hosted on
   illustrations; there is no router API or automatic installation.
 
 Python 3.10+ standard library only; no npm build, external fonts, or CDN.
+Node is used for JavaScript checks and optional npm command aliases.
 
 ## Files
 
@@ -38,9 +45,25 @@ To add a guide, add its page under `static/guides/` and a list entry in
 headings and show reference content immediately, without slogans or promotional
 copy.
 
+## Editing and history
+
+Edit the files in this checkout, then refresh the local Mac page to preview.
+Each guide's Source and History links open its source and revisions on GitHub.
+Use `git log --follow -- static/guides/<name>.html` for local page history.
+Shared styles and guide-specific JavaScript remain under `static/assets/`.
+
+The Mac serves current working files; the Pi serves the last deployed release.
+After reviewing an edit, run `npm test`, commit it, then use the scoped deployer
+below to update the Pi. Changes to Python serving code also need
+`npm run service:restart` on the Mac. No browser content editor is required.
+
+For continuous Mac hosting, see [Mac hosting](docs/local-hosting.md). Its
+launchd service starts at boot, runs preview-only on loopback port 8792, and
+supports `npm run service:status` and `npm run service:verify`.
+
 ## Run locally
 
-From this directory:
+For a temporary foreground preview when the Mac service is stopped:
 
 ```sh
 python3 app.py --bind 127.0.0.1 --port 8792
@@ -159,7 +182,7 @@ have emitted IR; inspect the A/C before repeating a toggle.
 
 ## Verification
 
-From this directory:
+Run `npm test` for all checks, or from this directory:
 
 ```sh
 python3 -m unittest discover -s tests -v

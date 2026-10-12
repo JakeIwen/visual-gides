@@ -72,11 +72,12 @@ class AcIrServer(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
-    def __init__(self, address: tuple[str, int], config: AppConfig):
+    def __init__(self, address: tuple[str, int], config: AppConfig,
+                 handler_class: type[AcIrHandler] | None = None):
         self.config = config
         self.transmit_lock = threading.Lock()
         self.last_transmit_at = float("-inf")
-        super().__init__(address, AcIrHandler)
+        super().__init__(address, handler_class or AcIrHandler)
 
 
 class AcIrHandler(BaseHTTPRequestHandler):

@@ -1,0 +1,16 @@
+{
+  "name": "visual-guides",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "python3 -m unittest discover -s tests -v && python3 -m unittest test_deploy test_hardware_setup -v && node --check static/assets/ac-guide.js && node --check static/assets/mwan3-guide.js",
+    "service:prepare": ".venv/bin/python -m local_service prepare",
+    "service:install": ".venv/bin/python -m local_service install --verify",
+    "service:status": ".venv/bin/python -m local_service status",
+    "service:start": ".venv/bin/python -m local_service start",
+    "service:stop": ".venv/bin/python -m local_service stop",
+    "service:restart": ".venv/bin/python -m local_service restart",
+    "service:verify": ".venv/bin/python -m local_service verify",
+    "service:uninstall": ".venv/bin/python -m local_service uninstall"
+  }
+}
