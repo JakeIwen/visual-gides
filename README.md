@@ -1,8 +1,14 @@
 # Visual Guides & Documentation
 
 Local documentation library and guarded A/C infrared controller, hosted on
-[vanpi.lan:8791](http://vanpi.lan:8791). The first guide is
-[/guides/air-conditioner.html](http://vanpi.lan:8791/guides/air-conditioner.html).
+[vanpi.lan:8791](http://vanpi.lan:8791).
+
+- [Window A/C IR remote](http://vanpi.lan:8791/guides/air-conditioner.html)
+- [mwan3-adaptive](http://vanpi.lan:8791/guides/mwan3-adaptive.html): illustrated
+  setup, policy selection, observation/active modes, status and recovery for the
+  unpublished 0.2.0-r1 OpenWrt candidate. Page controls only prepare scripts and
+  illustrations; there is no router API or automatic installation.
+
 Python 3.10+ standard library only; no npm build, external fonts, or CDN.
 
 ## Files
@@ -19,7 +25,11 @@ Python 3.10+ standard library only; no npm build, external fonts, or CDN.
   styles (light and dark) are in `assets/site.css`; `assets/ac-guide.js` owns the
   step checklists, copy buttons, LED current estimate, preview-only console and
   the catalog table built from `/api/ac/commands`. This is the only HTTP-served
-  directory.
+  directory. `assets/mwan3-guide.css` and `assets/mwan3-guide.js` own the adaptive
+  guide's diagrams, policy command generation and shell-script downloads.
+  `reference/mwan3-adaptive-{readme,validation}.txt` are snapshots of that
+  candidate's package documentation; refresh them and the guide together when
+  updating the documented version. General typography stays in `site.css`.
 - `tests/test_app.py`, `test_deploy.py`, `test_hardware_setup.py`: behavioral and
   deployment-contract tests.
 
@@ -155,6 +165,7 @@ From this directory:
 python3 -m unittest discover -s tests -v
 python3 -m unittest test_deploy test_hardware_setup -v
 node --check static/assets/ac-guide.js
+node --check static/assets/mwan3-guide.js
 ```
 
 Tests exercise real local HTTP calls with an injected recording transport; they

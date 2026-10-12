@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mwan3-adaptive · Visual Guides</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/site.css">
+  <link rel="stylesheet" href="../assets/mwan3-guide.css">
+  <script src="../assets/mwan3-guide.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#overview">Skip to guide</a>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Visual Guides &amp; Documentation</a><span aria-hidden="true">/</span><span aria-current="page">mwan3-adaptive</span></nav>
+<div class="page">
+<nav class="toc" aria-label="Sections">
+  <a href="#overview">How it works</a>
+  <a href="#setup">Configure and start</a>
+  <a href="#behavior">Connection behavior</a>
+  <a href="#daily">Daily commands</a>
+  <a href="#status">Read status</a>
+  <a href="#tuning">Tuning</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#limits">Limits</a>
+  <a href="#references">Version and references</a>
+  <button type="button" id="print-guide">Print / save PDF</button>
+</nav>
+<main>
+<h1>mwan3-adaptive</h1>
+<dl class="facts">
+  <dt>Use</dt><dd>Automatically adjust how new connections share available WAN links.</dd>
+  <dt>Requires</dt><dd>A working classic mwan3 installation with an existing balanced policy.</dd>
+  <dt>Service costs</dt><dd>No additional relay, VPS or subscription. Existing internet service and data charges still apply.</dd>
+  <dt>Version</dt><dd><span class="tag warn">0.2.0-r1 · local candidate</span> Live router testing remains.</dd>
+</dl>
+<section id="overview">
+  <h2>How the pieces fit</h2>
+  <figure class="diagram">
+    <div class="network-path" role="img" aria-label="Devices open connections. Native mwan3 rules choose a policy. That policy distributes new connections across uplinks A and B. Adaptive adjusts the proportions from traffic and latency observations.">
+      <div class="node"><strong>Devices</strong><small>New connections</small></div>
+      <span class="path-arrow" aria-hidden="true">→</span>
+      <div class="node"><strong>mwan3 policy</strong><small>Rules · eligibility · marks</small></div>
+      <span class="path-arrow" aria-hidden="true">→</span>
+      <div class="uplinks"><div class="node link-a"><strong>Uplink A</strong><small>Its own public connection</small></div><div class="node link-b"><strong>Uplink B</strong><small>Its own public connection</small></div></div>
+    </div>
+    <div class="feedback"><strong>Adaptive controller</strong><span>Read traffic + latency → learn capacity → adjust policy shares</span></div>
+    <figcaption>Existing connections retain their uplink. A single download connection does not combine both links’ speeds.</figcaption>
+  </figure>
+  <ol class="mode-path" aria-label="Recommended setup sequence">
+    <li><strong>1. Check</strong><span>Stopped service; validate compatible chains.</span></li>
+    <li><strong>2. Observe</strong><span>Learn and recommend; apply no new weights.</span></li>
+    <li><strong>3. Active</strong><span>Adjust shares for new connections.</span></li>
+    <li><strong>4. Stop</strong><span>Restore current configured mwan3 weights.</span></li>
+  </ol>
+</section><section id="setup">
+  <h2>Configure and start</h2>
+  <p>Keep your working mwan3 configuration. This package learns from uplink traffic and congestion, then adjusts the distribution of <strong>new connections</strong> within existing policies.</p>
+  <div class="note neutral"><p><strong>Project status:</strong> mwan3-adaptive is an independent companion, not part of mwan3 or OpenWrt and not endorsed or supported by either project. Version 0.2.0-r1 is a local candidate awaiting review and validation; no release archive or package repository has been published. Its stock mwan3 package dependency is standard, but the internal policy-chain layout it modifies is not a stable public API. Recheck compatibility after upgrades.</p></div>
+  <div class="note"><p><strong>Before enabling:</strong> use classic mwan3, including its iptables-nft compatibility backend. A policy needs two enabled, available members at the same metric to use both concurrently. Native nftables forks with different chains are unsupported. Unknown chain layouts are left untouched.</p></div>
+  <details id="installation" open>
+    <summary>1. Check prerequisites and install</summary>
+    <div>
+      <p>Start with working classic mwan3 and two available uplinks. This package does not create WAN interfaces, routing policies or matching traffic rules. A higher metric is a backup tier: two interfaces must use the same metric to balance concurrently.</p>
+      <div class="commands"><div class="command-top"><span>Router SSH shell · inspect</span><button type="button" data-download="inspect">Download .sh</button></div><pre><code id="inspect">ubus call system board
+mwan3 status
+mwan3 policies
+uci show mwan3</code></pre></div>
+      <p>These are illustrative native mwan3 member/policy sections, <strong>not a replacement configuration</strong>. Here both links are in metric 1, and the initial static weights are equal. <code>wan</code> and <code>wanb</code> must already exist, be enabled and online; a native mwan3 rule must target <code>balanced</code>. Configured literal <code>track_ip</code> addresses supply the latency signal; without them the adapter can still learn from traffic counters.</p>
+      <div class="commands"><div class="command-top">/etc/config/mwan3 · example excerpt</div><pre><code>config member 'wan_m1'
+    option interface 'wan'
+    option metric '1'
+    option weight '1'
+
+config member 'wanb_m1'
+    option interface 'wanb'
+    option metric '1'
+    option weight '1'
+
+config policy 'balanced'
+    list use_member 'wan_m1'
+    list use_member 'wanb_m1'</code></pre></div>
+      <p>Build from the reviewed candidate source in a configured OpenWrt tree or SDK matching your firmware release. The package is Lua/shell; its dependencies still need to match the firmware. There is no public package feed for this candidate.</p>
+      <div class="commands"><div class="command-top"><span>Configured OpenWrt build tree · build host, not router</span><button type="button" data-download="build">Download .sh</button></div><pre><code id="build">./scripts/feeds update packages &amp;&amp;
+./scripts/feeds install mwan3 iputils-ping &amp;&amp;
+make menuconfig &amp;&amp;
+make package/network/config/mwan3-adaptive/compile V=s</code></pre></div>
+      <p class="small">Select <strong>Network → Routing and Redirection → mwan3-adaptive</strong>. If mwan3 is hidden, enable rpcd. In an SDK, copy the package directory to <code>package/mwan3-adaptive</code> and use <code>make package/mwan3-adaptive/compile V=s</code>. See the <a href="../reference/mwan3-adaptive-readme.txt">candidate README</a> for the source layout.</p>
+      <p>Copy the matching built artifact to the router’s <code>/tmp</code>. Replace the example source path and <code>ROUTER</code>; use the actual <code>.ipk</code> or <code>.apk</code> format produced for that release.</p>
+      <div class="commands"><div class="command-top">Mac Terminal · example .ipk transfer</div><pre><code>scp /path/to/package.ipk root@ROUTER:/tmp/mwan3-adaptive.ipk</code></pre></div>
+      <div class="table-wrap"><table class="stack"><thead><tr><th>Router package manager</th><th>Run on the router after transfer</th></tr></thead><tbody>
+        <tr><td class="lead-cell">opkg / .ipk</td><td data-label="Install"><code>opkg update</code><br><code>opkg install /tmp/mwan3-adaptive.ipk</code></td></tr>
+        <tr><td class="lead-cell">apk / .apk</td><td data-label="Install"><code>apk update</code><br><code>apk add --allow-untrusted /tmp/mwan3-adaptive.apk</code></td></tr>
+      </tbody></table></div>
+      <p class="small">The apk option permits a locally built, unsigned candidate; inspect its source and verify its checksum first. It does not make an incompatible package usable. Dependencies are mwan3, Lua, flock and iputils-ping. Package-manager syntax: <a href="https://openwrt.org/docs/guide-user/additional-software/opkg-to-apk-cheatsheet">OpenWrt’s opkg/apk reference</a>.</p>
+      <p>Installation leaves adaptation disabled and sets observation as its default mode. Check the installed version with <code>mwan3-adaptive --version</code> before proceeding.</p>
+    </div>
+  </details>
+  <div class="setup">
+    <div class="step"><b>2</b><h3>Choose the policy to observe</h3></div>
+    <p class="small">Find existing names with <code>mwan3 policies</code> or <code>uci show mwan3</code>. Native mwan3 rules must already send the desired traffic to that policy. The name below is an example, not a detected policy.</p>
+    <label for="policy">Existing mwan3 policy</label>
+    <input type="text" id="policy" value="balanced" maxlength="15" spellcheck="false" autocomplete="off" aria-describedby="policy-error selection-help">
+    <label class="check"><input type="checkbox" id="all-policies"> Automatically select all eligible policies</label>
+    <p id="selection-help" class="small muted">The commands replace the adaptive package’s previous policy selection. They do not edit mwan3 policies. Keep metered links out of the selected policies if they should not carry extra traffic.</p>
+    <p class="error" id="policy-error" role="status"></p>
+    <div class="commands"><div class="command-top"><span>Router SSH shell · observation</span><button type="button" data-download="observe">Download .sh</button></div><pre><code id="observe">uci set mwan3-adaptive.main.enabled='1' &amp;&amp;
+uci set mwan3-adaptive.main.mode='observe' &amp;&amp;
+(uci -q delete mwan3-adaptive.main.policy || true) &amp;&amp;
+uci add_list mwan3-adaptive.main.policy='balanced' &amp;&amp;
+uci commit mwan3-adaptive &amp;&amp;
+/etc/init.d/mwan3-adaptive stop &amp;&amp;
+/usr/sbin/mwan3-adaptive check &amp;&amp;
+/etc/init.d/mwan3-adaptive enable &amp;&amp;
+/etc/init.d/mwan3-adaptive start</code></pre></div>
+
+    <p class="small muted" style="margin-top:10px">Download buttons save shell scripts; they never run them. Review the file, transfer it to the router, then run it there. For the observation script, replace <code>ROUTER</code> below with your router’s SSH address.</p>
+  <div class="commands"><div class="command-top">Mac Terminal · transfer the downloaded script</div><pre><code>scp ~/Downloads/mwan3-observe.sh root@ROUTER:/tmp/</code></pre></div>
+    <div class="commands"><div class="command-top">Router SSH shell · run the reviewed script</div><pre><code>sh /tmp/mwan3-observe.sh</code></pre></div>
+  </div>
+  <h3>3. Generate ordinary traffic and inspect the result</h3>
+  <p>The generated sequence stops the service, runs <code>mwan3-adaptive check</code>, then starts observation. The check validates configuration and recognized active chains using a RAM-only snapshot. It requires the daemon to be stopped and performs no network probes or firewall writes.</p>
+  <p>Use several independent downloads or normal activity across your devices. Observation measures traffic and sends bounded probes, but does not apply new weights. The stop/start sequence restores previously applied weights before observation begins; a failed stop prevents the check and start.</p>
+  <div class="commands"><div class="command-top"><span>Router SSH shell</span><button type="button" data-download="check">Download .sh</button></div><pre><code id="check">mwan3-adaptive status</code></pre></div>
+  <p class="small">Sampling pauses 10 seconds between completed cycles by default. Allow several cycles under traffic; an idle link’s unused capacity cannot be measured from traffic counters.</p>
+  <h3>4. Enable automatic adjustments</h3>
+  <p>When the recommendations look sensible, switch to active mode. Existing connections keep their uplink; the updated distribution affects new connections.</p>
+  <div class="commands"><div class="command-top"><span>Router SSH shell · changes allocation</span><button type="button" data-download="activate">Download .sh</button></div><pre><code id="activate">uci set mwan3-adaptive.main.mode='active' &amp;&amp;
+uci commit mwan3-adaptive &amp;&amp;
+/etc/init.d/mwan3-adaptive stop &amp;&amp;
+/etc/init.d/mwan3-adaptive start</code></pre></div>
+</section>
+<section id="behavior">
+  <h2>What happens to connections</h2>
+  <div class="diagram">
+    <div class="scenarios" role="group" aria-label="Illustrative link conditions"><button type="button" data-scenario="available" aria-pressed="true">Both available</button><button type="button" data-scenario="congested" aria-pressed="false">B congested</button><button type="button" data-scenario="offline" aria-pressed="false">B offline</button></div>
+    <strong class="small">New connections</strong>
+    <div class="bar" role="img" aria-label="Illustration: 60 percent link A, 40 percent link B" id="allocation"><span class="a" id="share-a" style="width:60%">A · 60%</span><span class="b" id="share-b" style="width:40%">B · 40%</span></div>
+    <div class="legend"><span>A: available uplink</span><span>B: second eligible uplink</span></div>
+    <h3>Already-open sessions</h3>
+    <div class="sessions" aria-label="Four existing sessions"><span class="a">Session 1 → A</span><span class="b">Session 2 → B</span><span class="a">Session 3 → A</span><span class="b">Session 4 → B</span></div>
+    <p id="scenario-note" class="small" aria-live="polite">Both links receive new connections. Existing sessions stay where they started.</p>
+    <small>Illustrative shares, not a simulation of the controller or live router data.</small>
+  </div>
+  <div class="responsibilities" style="margin-top:22px"><article><h3>mwan3 decides eligibility</h3><p>It owns routing, tracking, failover tiers, sticky rules and connection marks. Higher-metric links remain backups.</p></article><article><h3>Adaptive learns the distribution</h3><p>Traffic rates, latency growth and loss influence new connections. A small exploration share keeps eligible links in use so improvements can be noticed.</p></article></div>
+</section>
+<section id="daily">
+  <h2>Daily commands</h2>
+  <h3>Return to observation</h3>
+  <p>The successful stop matters: it restores the current configured mwan3 weights before observation starts. Changing only the mode can leave previously applied weights in place.</p>
+  <div class="commands"><div class="command-top"><span>Router SSH shell</span><button type="button" data-download="observe-again">Download .sh</button></div><pre><code id="observe-again">uci set mwan3-adaptive.main.mode='observe' &amp;&amp;
+uci commit mwan3-adaptive &amp;&amp;
+/etc/init.d/mwan3-adaptive stop &amp;&amp;
+/etc/init.d/mwan3-adaptive start</code></pre></div>
+  <h3>Stop adaptation and keep it stopped after reboot</h3>
+  <div class="commands"><div class="command-top"><span>Router SSH shell · restore configured weights</span><button type="button" data-download="stop">Download .sh</button></div><pre><code id="stop">/etc/init.d/mwan3-adaptive stop &amp;&amp;
+/etc/init.d/mwan3-adaptive disable</code></pre></div>
+  <p class="small">Stop restores owned or safely adopted pending policies using current active members and current configured mwan3 weights. It does not replay a saved firewall snapshot. Successful restoration clears both ownership ledgers. The second command runs only if stop succeeds. Stop successfully before uninstalling.</p>
+  <details><summary>If restoration fails</summary><div><p>Read the error, confirm the daemon has stopped, then retry restoration:</p><div class="commands"><div class="command-top"><span>Router SSH shell</span><button type="button" data-download="restore">Download .sh</button></div><pre><code id="restore">mwan3-adaptive restore</code></pre></div><p class="small">Native mwan3 continues to own failover. A native policy rebuild also replaces adaptive allocations with its configured weights.</p></div></details>
+  <details><summary>Take a single sample with the daemon stopped</summary><div><div class="commands"><div class="command-top"><span>Router SSH shell · no routing changes</span><button type="button" data-download="sample">Download .sh</button></div><pre><code id="sample">mwan3-adaptive sample</code></pre></div><p class="small">This probes and writes RAM status, but has no throughput history. It is not a speed test and cannot run alongside the daemon.</p></div></details>
+  <details><summary>Validate configuration and chain compatibility</summary><div><div class="commands"><div class="command-top"><span>Router SSH shell · daemon stopped</span><button type="button" data-download="compatibility-check">Download .sh</button></div><pre><code id="compatibility-check">mwan3-adaptive check</code></pre></div><p class="small">This validates the effective configuration and recognized active classic mwan3 chain layout. It uses a RAM-only snapshot and performs no probes or firewall writes.</p></div></details>
+</section>
+<section id="status">
+  <h2>Reading the status</h2>
+  <p>Example output from observation mode:</p>
+  <div class="commands"><div class="command-top"><span>Example · not live telemetry</span></div><pre><code>current_uptime=12345.00
+sample_uptime=12343.00 interval=10 enabled=1 mode=observe result=observed
+ipv4:balanced wan  sampled=1 recommended=800 rx
+ipv4:balanced wanb sampled=1 recommended=200 rx
+link=wan  rx_kbit=24000.0 tx_kbit=900.0 quality=0.950
+link=wanb rx_kbit=6000.0  tx_kbit=200.0 quality=0.700</code></pre></div>
+  <div class="table-wrap"><table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody>
+    <tr><td><code>sampled</code></td><td>The policy weights at the start of the cycle. Here, 1 and 1 mean equal shares.</td></tr>
+    <tr><td><code>recommended</code></td><td>Proportional weights within this policy and address family. Here, 800 + 200 = 1,000: about 80% and 20% of new connections.</td></tr>
+    <tr><td><code>rx</code> / <code>tx</code></td><td>The traffic direction used for that recommendation: download or upload.</td></tr>
+    <tr><td><code>quality</code></td><td>A smoothed internal preference from latency growth and probe loss. It is not an uptime percentage or speed measurement.</td></tr>
+    <tr><td>Uptime fields</td><td>Seconds since router boot. Subtract sample uptime from current uptime to judge freshness. A status file can remain after the service stops.</td></tr>
+  </tbody></table></div>
+  <figure class="diagram">
+    <div class="comparison"><span>Sampled: 1 / 1</span><div class="bar" role="img" aria-label="Sampled weights: 50 percent wan, 50 percent wanb"><span class="a" style="width:50%">wan · 50%</span><span class="b" style="width:50%">wanb · 50%</span></div></div>
+    <div class="comparison"><span>Recommended: 800 / 200</span><div class="bar" role="img" aria-label="Recommended weights: 80 percent wan, 20 percent wanb"><span class="a" style="width:80%">wan · 80%</span><span class="b" style="width:20%">20%</span></div></div>
+    <figcaption>For each policy and address family: share = member weight ÷ sum of weights. These are selection probabilities for new connections, not promised bandwidth percentages.</figcaption>
+  </figure>
+  <h3>Result values</h3>
+  <div class="table-wrap"><table><tbody>
+    <tr><td><span class="badge">observed</span></td><td>A meaningful recommendation was prepared without applying it.</td></tr>
+    <tr><td><span class="badge">applied</span></td><td>The changed policies now use the recommended allocation.</td></tr>
+    <tr><td><span class="badge">unchanged</span></td><td>No policy was ready for a meaningful update. The difference may be small, the cooldown may still apply, or measurements may be incomplete.</td></tr>
+    <tr><td><span class="badge">restored</span></td><td>Current configured static weights were reapplied to the owned (or safely adopted pending) policy chains.</td></tr>
+    <tr><td><span class="badge">error</span></td><td>The cycle failed. A later-family failure triggers compensation of earlier writes when possible, but a crash or failed rollback can require journal recovery.</td></tr>
+  </tbody></table></div>
+</section>
+<section id="tuning">
+  <h2>Tuning</h2>
+  <p>Start with the defaults. Settings live in <code>/etc/config/mwan3-adaptive</code>, in section <code>main</code>. After editing, commit the configuration, then stop the service successfully before starting it again.</p>
+  <div class="table-wrap"><table><thead><tr><th>Option</th><th>Default</th><th>Effect</th></tr></thead><tbody>
+    <tr><td><code>interval</code></td><td>10 seconds</td><td>Delay after a completed sampling cycle. Allowed: 5–300, whole seconds.</td></tr>
+    <tr><td><code>update_interval</code></td><td>30 seconds</td><td>Minimum spacing between updates to a policy. Allowed: 5–3,600; at least <code>interval</code>.</td></tr>
+    <tr><td><code>hysteresis</code></td><td>0.10</td><td>Minimum total redistribution of share before applying a change. Allowed: 0.01–0.50.</td></tr>
+    <tr><td><code>exploration</code></td><td>0.05</td><td>Total allocation reserved across eligible links for learning. Allowed: 0.01–0.50.</td></tr>
+    <tr><td><code>congestion_ms</code></td><td>30 ms</td><td>Latency growth that halves the instantaneous latency preference. Allowed: 5–1,000.</td></tr>
+  </tbody></table></div>
+  <h3>Apply a tuning change</h3>
+  <p>This example slows updates to once per minute while preserving your current mode and policy selection. Start with the defaults; change one option at a time.</p>
+  <div class="commands"><div class="command-top"><span>Router SSH shell · example tuning</span><button type="button" data-download="tune">Download .sh</button></div><pre><code id="tune">uci set mwan3-adaptive.main.update_interval='60' &amp;&amp;
+uci commit mwan3-adaptive &amp;&amp;
+/etc/init.d/mwan3-adaptive stop &amp;&amp;
+/usr/sbin/mwan3-adaptive check &amp;&amp;
+/etc/init.d/mwan3-adaptive start</code></pre></div>
+  <p class="small muted" style="margin-top:14px">Learning resets on restart. Learned allocations and observations stay in private RAM files under <code>/var/run/mwan3-adaptive</code>.</p>
+</section>
+<section id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <details><summary>Stop, restart or uninstall reports a restoration failure</summary><div><p>Leave the controller stopped. Inspect <code>logread -e mwan3-adaptive</code> and native <code>mwan3 status</code>, then retry <code>mwan3-adaptive restore</code>. Do not delete its pending journal to force a restart. A successful restoration uses current native membership and configured weights; it does not replay an old firewall snapshot. Stop successfully before removing the package with <code>opkg remove mwan3-adaptive</code> or <code>apk del mwan3-adaptive</code>.</p></div></details>
+  <details><summary>A selected policy says “shared interface counters”</summary><div><p>Its active logical interfaces map to the same L3 device, so independent capacity cannot be learned from those counters. That policy is skipped. Inspect the underlying interfaces; do not treat duplicate counters as two independent uplinks.</p></div></details>
+  <details><summary>No samples recorded, or the timestamp stopped advancing</summary><div><p>Check that the package is enabled in UCI and the daemon is running. A successful <code>start</code> alone proves little when <code>main.enabled</code> is 0. Look at service logs:</p><div class="commands"><div class="command-top"><span>Router SSH shell</span><button type="button" data-download="logs">Download .sh</button></div><pre><code id="logs">logread -e mwan3-adaptive</code></pre></div></div></details>
+  <details><summary>One link gets no new connections</summary><div><p>Check native mwan3 status and policy membership first. Both members must be enabled, online and eligible at the same metric. Sticky rules can also pin new connections. This package does not promote a backup tier or override sticky behavior.</p><div class="commands"><div class="command-top"><span>Router SSH shell</span><button type="button" data-download="native">Download .sh</button></div><pre><code id="native">mwan3 status</code></pre></div></div></details>
+  <details><summary>Recommendations barely move</summary><div><p>Generate more independent connections and allow several cycles. A single existing transfer cannot be split or moved. Small differences are deliberately suppressed by hysteresis; changes also wait for the update interval.</p><p>Check interface counters and configured literal <code>track_ip</code> targets. No tracking target means no latency signal. Shared devices, offloading and shared upstream bottlenecks can obscure capacity.</p></div></details>
+  <details><summary>“Classic mwan3 iptables hook unavailable” or a skipped layout</summary><div><p>Confirm that classic mwan3 is running and has created its normal chains. Native nftables forks use a different contract and need another adapter. Unknown layouts are left untouched.</p></div></details>
+  <details><summary>“Firewall changed, stopped, stale, or transaction failed”</summary><div><p>The controller could not safely apply that snapshot. Native hotplug changes, a stop request, an old sample or a firewall error can cause this. It retries from fresh state. Persistent failures need log inspection; do not clear conntrack or manually overwrite policy chains to work around them.</p></div></details>
+</section>
+<section id="limits">
+  <h2>Scope and verification</h2>
+  <ul>
+    <li><strong>Connection balancing, not single-flow bonding.</strong> No external relay or subscription. One connection uses one uplink; summed speed is not guaranteed.</li>
+    <li><strong>Failover does not migrate existing sessions.</strong> A failed uplink can break sessions using its public IP.</li>
+    <li><strong>Data caps are not tracked.</strong> Restrict metered uplinks through the native policy selection.</li>
+    <li><strong>Capacity estimates are heuristic.</strong> They depend on traffic and are not speed-test measurements. This does not replace SQM.</li>
+    <li><strong>Cross-family writes are not atomic.</strong> Both families are preflighted before writes and a later failure triggers compensation, but a crash or rollback failure can leave a partial change. The retained pending journal is reconciled on recovery.</li>
+  </ul>
+  <p class="small">The source includes algorithm, controller/lifecycle, package-content and isolated Linux network-namespace checks. Their presence does not mean every revision passed every check. Consult validation records for the exact source revision and environment; an IPv6 packet check may be skipped on kernels without IPv6 support. No universal router, radio or workload compatibility is claimed.</p>
+</section>
+<section id="references">
+  <h2>Version and references</h2>
+  <p>This guide describes the <strong>0.2.0-r1 local candidate</strong>, reviewed on 2026-10-12. It is awaiting maintainer review and live router testing; it has not been formally published. Examples are illustrative and this page does not read router state.</p>
+  <ul>
+    <li><a href="../reference/mwan3-adaptive-readme.txt">Candidate README snapshot</a> — requirements, build steps and runtime contract.</li>
+    <li><a href="../reference/mwan3-adaptive-validation.txt">Candidate validation record</a> — completed checks and gaps, including the skipped IPv6 packet test.</li>
+    <li><a href="https://openwrt.org/docs/guide-user/additional-software/opkg-to-apk-cheatsheet">OpenWrt package-manager reference</a> — local package installation syntax.</li>
+  </ul>
+  <p class="small">The standard <code>+mwan3</code> dependency reuses existing routing and tracking. The direct policy-chain adapter depends on internal behavior rather than a supported plugin interface. Classic mwan3 2.12.2’s layout was reviewed; rerun the stopped-service compatibility check after upgrades.</p>
+</section>
+<footer>Maintainer: Jacob Iwen &lt;lionfeatherdev@gmail.com&gt;. No router commands run from this page.</footer>
+</main></div>
+<div id="announcement" role="status" aria-live="polite"></div>
+<noscript><p class="note">The example commands and diagrams remain readable. JavaScript enables policy selection, script downloads and the scenario buttons. With JavaScript disabled, the setup example selects the policy named balanced.</p></noscript>
+</body></html>
