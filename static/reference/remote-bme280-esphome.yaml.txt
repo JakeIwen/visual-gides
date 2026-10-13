@@ -1,0 +1,62 @@
+# ESPHome config for the remote van climate sensor.
+# Save as van-climate-rear.yaml next to secrets.yaml (see the Remote BME280 guide).
+# Board: HiLetgo NodeMCU ESP8266 (ESP-12E, CP2102). Sensor: BME280 on I2C.
+
+esphome:
+  name: van-climate-rear
+  friendly_name: Van climate rear
+
+esp8266:
+  board: nodemcuv2
+
+logger:
+  level: INFO
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # If dendelion is unreachable for a minute, the node opens its own fallback
+  # hotspot so Wi-Fi can be fixed from a phone without USB.
+  ap:
+    password: !secret fallback_ap_password
+
+captive_portal:
+
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+# No api: block. Readings go to Mosquitto on vanpi, and Home Assistant picks
+# them up through its existing MQTT integration (discovery is already on).
+mqtt:
+  broker: 192.168.6.103
+  port: 1884
+  username: van-climate-rear
+  password: !secret mqtt_password
+  topic_prefix: vanpi/sensors/van_climate_rear
+  discovery: true
+  discovery_prefix: homeassistant
+
+i2c:
+  sda: GPIO4  # D2
+  scl: GPIO5  # D1
+  scan: true
+  frequency: 50kHz
+
+sensor:
+  - platform: bme280_i2c
+    address: 0x76  # change to 0x77 if the boot log's I2C scan shows 0x77
+    update_interval: 60s
+    temperature:
+      name: Temperature
+      oversampling: 1x
+    pressure:
+      name: Pressure
+      oversampling: 1x
+    humidity:
+      name: Humidity
+      oversampling: 1x
+
+  - platform: wifi_signal
+    name: Wi-Fi signal
+    update_interval: 300s

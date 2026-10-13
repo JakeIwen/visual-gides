@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Remote BME280 climate sensor · Visual Guides</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Visual Guides &amp; Documentation</a><span aria-hidden="true">/</span><span aria-current="page">Remote BME280 climate sensor</span></nav>
+<div class="page">
+<nav class="toc" aria-label="Sections">
+  <a href="#overview">How it fits</a>
+  <a href="#parts">Parts</a>
+  <a href="#wiring">Wiring</a>
+  <a href="#power">Power</a>
+  <a href="#broker">Pi: open the broker</a>
+  <a href="#firmware">Mac: flash the node</a>
+  <a href="#ha">Home Assistant</a>
+  <a href="#placement">Placement and accuracy</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#why-wireless">Why not wire it to the Pi</a>
+  <a href="#sources">Sources</a>
+  <a href="https://github.com/JakeIwen/visual-guides/blob/main/static/guides/remote-bme280.html">Source</a>
+  <a href="https://github.com/JakeIwen/visual-guides/commits/main/static/guides/remote-bme280.html">History</a>
+</nav>
+<main>
+<h1>Remote BME280 climate sensor</h1>
+<dl class="facts">
+  <dt>Use</dt><dd>Temperature, humidity and pressure from the far side of the van, shown in Home Assistant beside the Pi's own BME280.</dd>
+  <dt>Node</dt><dd>HiLetgo NodeMCU ESP8266 running ESPHome, BME280 on I²C (D1/D2), powered by 5 V USB.</dd>
+  <dt>Link</dt><dd>Wi-Fi to <code>dendelion</code>, then MQTT to Mosquitto on vanpi, port 1884 with a password. No cable to the Pi.</dd>
+  <dt>Pi changes</dt><dd>One Mosquitto config file and a password file. Home Assistant and <code>bme280-mqtt</code> stay as they are.</dd>
+  <dt>Status</dt><dd><span class="tag warn">Not built</span> Configs written against ESPHome 2026.9 and Mosquitto 2.0.11; nothing flashed or applied yet.</dd>
+  <dt>Updated</dt><dd>2026-10-13</dd>
+</dl>
+
+<section id="overview">
+  <h2>How it fits</h2>
+  <figure>
+    <div class="schematic">
+      <svg viewBox="0 0 760 290" role="img" aria-labelledby="sys-title sys-desc">
+        <title id="sys-title">Remote sensor data path</title>
+        <desc id="sys-desc">At the far side of the van, a fused 12 volt circuit feeds the CPT buck converter, whose USB output powers the NodeMCU. The BME280 hangs on short leads below the NodeMCU's box. The NodeMCU joins the dendelion Wi-Fi and publishes to Mosquitto on vanpi port 1884. Home Assistant and the existing Pi BME280 publisher use port 1883 on loopback.</desc>
+        <rect class="sv-board" x="10" y="16" width="300" height="258" rx="8"/>
+        <text class="sv-text sv-strong" x="26" y="42">Far side of the van</text>
+        <rect class="sv-part w-5v" x="26" y="58" width="128" height="44" rx="5"/>
+        <text class="sv-text" x="38" y="78">12 V, fused</text>
+        <text class="sv-text sv-muted" x="38" y="94">house circuit</text>
+        <path class="sv-wire w-5v" d="M90 102 V124"/>
+        <rect class="sv-part w-5v" x="26" y="124" width="128" height="44" rx="5"/>
+        <text class="sv-text" x="38" y="144">CPT buck</text>
+        <text class="sv-text sv-muted" x="38" y="160">12 → 5 V USB-A</text>
+        <path class="sv-wire w-5v" d="M154 146 H176"/>
+        <rect class="sv-part w-gpio" x="176" y="112" width="120" height="70" rx="5"/>
+        <text class="sv-text sv-strong" x="188" y="136">NodeMCU</text>
+        <text class="sv-text sv-muted" x="188" y="154">ESPHome</text>
+        <text class="sv-text sv-muted" x="188" y="170">in IP65 box</text>
+        <path class="sv-wire w-gpio" d="M236 182 V214"/>
+        <rect class="sv-part w-led" x="176" y="214" width="120" height="44" rx="5"/>
+        <text class="sv-text" x="188" y="234">BME280</text>
+        <text class="sv-text sv-muted" x="188" y="250">outside the box</text>
+
+        <path class="sv-wire w-sw" style="stroke-dasharray:6 5" d="M296 146 H420"/>
+        <text class="sv-text sv-muted" x="312" y="136">Wi-Fi 2.4 GHz</text>
+        <rect class="sv-part w-sw" x="420" y="120" width="96" height="52" rx="5"/>
+        <text class="sv-text" x="432" y="142">dendelion</text>
+        <text class="sv-text sv-muted" x="432" y="160">192.168.6.1</text>
+        <path class="sv-wire w-gnd" d="M516 146 H546"/>
+
+        <rect class="sv-board" x="546" y="16" width="204" height="258" rx="8"/>
+        <text class="sv-text sv-strong" x="562" y="42">vanpi · 192.168.6.103</text>
+        <rect class="sv-part w-fet" x="562" y="58" width="172" height="78" rx="5"/>
+        <text class="sv-text sv-strong" x="574" y="80">Mosquitto</text>
+        <text class="sv-text sv-muted" x="574" y="100">:1884 LAN, password</text>
+        <text class="sv-text sv-muted" x="574" y="120">:1883 loopback only</text>
+        <rect class="sv-part w-sw" x="562" y="156" width="172" height="44" rx="5"/>
+        <text class="sv-text" x="574" y="176">Home Assistant</text>
+        <text class="sv-text sv-muted" x="574" y="192">MQTT discovery</text>
+        <rect class="sv-part w-sw" x="562" y="214" width="172" height="44" rx="5"/>
+        <text class="sv-text" x="574" y="234">bme280-mqtt</text>
+        <text class="sv-text sv-muted" x="574" y="250">existing Pi sensor</text>
+      </svg>
+    </div>
+    <span class="schematic-hint">Swipe the diagram sideways to see the Pi.</span>
+    <figcaption>The only thing that crosses the van is Wi-Fi. Home Assistant learns the new sensors from MQTT discovery, the same way it found the Pi's BME280.</figcaption>
+  </figure>
+  <p>Inspected 2026-10-13: Home Assistant Core 2024.3.3 on vanpi already has the MQTT integration (broker <code>127.0.0.1:1883</code>, discovery on). <code>bme280-mqtt</code> is publishing <code>vanpi/sensors/vanpi_bme280_1</code> from a BME280 on GPIO23/24, humidity included. Mosquitto listens only on <code>127.0.0.1:1883</code>, so a node on Wi-Fi can't reach it yet. Step 1 adds a password-protected LAN listener.</p>
+</section>
+
+<section id="parts">
+  <h2>Parts</h2>
+  <p>Checked against the electronics inventory on 2026-10-13. A match is a catalog record, not a fresh count, and storage locations aren't recorded.</p>
+  <h3>From the inventory</h3>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Part</th><th>Inventory record</th><th>Check before use</th></tr></thead><tbody>
+    <tr>
+      <td class="lead-cell">ESP8266 board</td>
+      <td data-label="Inventory record">HiLetgo NodeMCU ESP-12E, CP2102 USB, 3 on hand. Untested.<small class="id">devboard-hiletgo-esp8266-esp12e-cp2102-001</small></td>
+      <td data-label="Check">Use one; the other two are spares. 3.3 V logic. Leave D3, D4 and D8 unconnected: they set the boot mode.</td>
+    </tr>
+    <tr>
+      <td class="lead-cell">BME280 breakout</td>
+      <td data-label="Inventory record">Four-pin <code>VIN GND SCL SDA</code> board marked BME/BMP280. Reported BME280, untested.<small class="id">sensor-bme280-i2c-breakout-001</small></td>
+      <td data-label="Check">The Pi already has a working BME280 on GPIO23/24. If that's this catalog unit, buy the spare below. The boot log tells BME280 from BMP280.</td>
+    </tr>
+    <tr>
+      <td class="lead-cell">12 → 5 V USB buck</td>
+      <td data-label="Inventory record">CPT 15 W converter, 5 V / 3 A USB-A out, bare input leads. Untested.<small class="id">power-cpt-12v-5v-3a-usb-buck-001</small></td>
+      <td data-label="Check">Insulate the bare leads now. Meter 5 V on the USB socket before plugging the board in. Skip it if a USB outlet is already near the spot.</td>
+    </tr>
+    <tr>
+      <td class="lead-cell">Enclosure</td>
+      <td data-label="Inventory record">Zulkit IP65 ABS box, 57 × 50 × 28 mm inside (seller). Reported owned.<small class="id">enclosure-zulkit-ip65-63x58x35-001</small></td>
+      <td data-label="Check">Dry-fit the 49 × 26 mm board with Dupont housings on. The sensor goes outside the box, not in it.</td>
+    </tr>
+    <tr>
+      <td class="lead-cell">Jumper wires</td>
+      <td data-label="Inventory record">120 Dupont leads, 24 AWG, 30 cm, all end types.<small class="id">wire-dupont-jumper-24awg-30cm-assortment-001</small></td>
+      <td data-label="Check">Four female-to-female for the sensor. Twist them loosely together.</td>
+    </tr>
+  </tbody></table></div>
+
+  <h3>Buy if you don't have them</h3>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Part</th><th>Amazon</th><th>Notes</th></tr></thead><tbody>
+    <tr>
+      <td class="lead-cell">Micro-USB data cable</td>
+      <td data-label="Amazon"><a href="https://www.amazon.com/dp/B01MUJOA5E">Anker PowerLine Micro USB, 6 ft, 2-pack</a></td>
+      <td data-label="Notes">Needs data wires for the first flash. Charge-only cables are the most common reason a board doesn't show up on the Mac. The same cable then runs from the buck.</td>
+    </tr>
+    <tr>
+      <td class="lead-cell">Inline blade fuse holder</td>
+      <td data-label="Amazon"><a href="https://www.amazon.com/dp/B07B5Y2ZJD">ZOOKOTO ATC/ATO, 16 AWG, 2-pack</a></td>
+      <td data-label="Notes">Only if the buck's 12 V doesn't come from an existing fused branch. Swap the included 10 A fuse for a 2–3 A one.</td>
+    </tr>
+    <tr>
+      <td class="lead-cell">BME280 <span class="tag">if needed</span></td>
+      <td data-label="Amazon"><a href="https://www.amazon.com/dp/B01N47LZ4P">HiLetgo GY-BME280-3.3</a></td>
+      <td data-label="Notes">Only if the catalog unit is the one on the Pi, or reads as BMP280. 3.3 V only, header pins usually unsoldered. Wiring differs a little; see below.</td>
+    </tr>
+  </tbody></table></div>
+  <p class="small">You'll also need a multimeter, and a soldering iron if the sensor's header isn't on yet.</p>
+</section>
+
+<section id="wiring">
+  <h2>Wiring</h2>
+  <p>Four wires, all at 3.3 V. Unplug USB while wiring.</p>
+  <figure>
+    <div class="schematic">
+      <svg viewBox="0 0 760 270" role="img" aria-labelledby="wire-title wire-desc">
+        <title id="wire-title">NodeMCU to BME280 wiring</title>
+        <desc id="wire-desc">NodeMCU 3V3 to BME280 VIN, GND to GND, D1 which is GPIO5 to SCL, and D2 which is GPIO4 to SDA. USB power enters the NodeMCU's micro-USB socket.</desc>
+        <rect class="sv-board" x="16" y="20" width="220" height="230" rx="8"/>
+        <text class="sv-text sv-strong" x="34" y="50">NodeMCU ESP8266</text>
+        <text class="sv-text sv-muted" x="34" y="70">pin row with D0–D8</text>
+        <text class="sv-text sv-pinlabel" x="222" y="105" text-anchor="end">3V3</text>
+        <text class="sv-text sv-pinlabel" x="222" y="145" text-anchor="end">GND</text>
+        <text class="sv-text sv-pinlabel" x="222" y="185" text-anchor="end">D1 · GPIO5</text>
+        <text class="sv-text sv-pinlabel" x="222" y="225" text-anchor="end">D2 · GPIO4</text>
+        <rect class="f-5v" x="230" y="94" width="12" height="12" rx="2"/>
+        <rect class="f-gnd" x="230" y="134" width="12" height="12" rx="2"/>
+        <rect class="f-gpio" x="230" y="174" width="12" height="12" rx="2"/>
+        <rect class="f-gpio" x="230" y="214" width="12" height="12" rx="2"/>
+
+        <path class="sv-wire w-5v" d="M242 100 H520"/>
+        <path class="sv-wire w-gnd" d="M242 140 H520"/>
+        <path class="sv-wire w-gpio" d="M242 180 H520"/>
+        <path class="sv-wire w-gpio" style="stroke-dasharray:10 6" d="M242 220 H520"/>
+        <text class="sv-text sv-muted" x="380" y="88" text-anchor="middle">10–30 cm, loosely twisted</text>
+
+        <rect class="sv-board" x="520" y="70" width="220" height="180" rx="8"/>
+        <text class="sv-text sv-strong" x="660" y="58" text-anchor="middle">BME280 breakout</text>
+        <rect class="f-5v" x="514" y="94" width="12" height="12" rx="2"/>
+        <rect class="f-gnd" x="514" y="134" width="12" height="12" rx="2"/>
+        <rect class="f-gpio" x="514" y="174" width="12" height="12" rx="2"/>
+        <rect class="f-gpio" x="514" y="214" width="12" height="12" rx="2"/>
+        <text class="sv-text sv-pinlabel" x="536" y="105">VIN</text>
+        <text class="sv-text sv-pinlabel" x="536" y="145">GND</text>
+        <text class="sv-text sv-pinlabel" x="536" y="185">SCL</text>
+        <text class="sv-text sv-pinlabel" x="536" y="225">SDA</text>
+        <text class="sv-text sv-muted" x="600" y="145">sensor port</text>
+        <text class="sv-text sv-muted" x="600" y="163">faces the room</text>
+      </svg>
+    </div>
+    <span class="schematic-hint">Swipe the diagram sideways to see the sensor end.</span>
+    <figcaption>SDA is drawn dashed to tell it from SCL. Feed the sensor from the NodeMCU's 3V3 pin, never from its own VIN pin (USB 5 V).</figcaption>
+  </figure>
+
+  <h3>Connections</h3>
+  <div class="table-wrap"><table class="stack flow"><thead><tr><th>NodeMCU</th><th>Wire</th><th>BME280</th></tr></thead><tbody>
+    <tr><td class="lead-cell"><span class="chip c-5v"></span>3V3</td><td data-label="Wire">female–female</td><td data-label="BME280">VIN</td></tr>
+    <tr><td class="lead-cell"><span class="chip c-gnd"></span>GND</td><td data-label="Wire">female–female</td><td data-label="BME280">GND</td></tr>
+    <tr><td class="lead-cell"><span class="chip c-gpio"></span>D1 (GPIO5)</td><td data-label="Wire">female–female</td><td data-label="BME280">SCL</td></tr>
+    <tr><td class="lead-cell"><span class="chip c-gpio"></span>D2 (GPIO4)</td><td data-label="Wire">female–female</td><td data-label="BME280">SDA</td></tr>
+  </tbody></table></div>
+  <p class="small">On the usual NodeMCU 1.0 layout, D1, D2, 3V3 and GND are all on the D0–D8 row: 2nd, 3rd, 6th and 7th pins from the D0 end. Go by the silkscreen on your board, not this count.</p>
+
+  <h3>If you use the 6-pin HiLetgo board instead</h3>
+  <ul class="plain-list">
+    <li><code>VCC</code> → 3V3, <code>GND</code> → GND, <code>SCL</code> → D1, <code>SDA</code> → D2.</li>
+    <li><code>CSB</code> → 3V3 to keep it in I²C mode. ESPHome's docs recommend this to avoid communication failures.</li>
+    <li><code>SDO</code> → GND for address 0x76 (matches the config), or 3V3 for 0x77. Don't leave it floating.</li>
+  </ul>
+</section>
+
+<section id="power">
+  <h2>Power</h2>
+  <p>The node draws well under 100 mA at 5 V, with short Wi-Fi peaks. Any 5 V USB outlet already on that side of the van is the simplest supply. Otherwise use the CPT buck:</p>
+  <ol>
+    <li>Take 12 V from a fused house-battery branch, or add the inline fuse holder (2–3 A) right at the tap. Red is + and black is −, per the label. Check with the meter before the first connection.</li>
+    <li>With nothing plugged in, meter the USB-A socket: pins 1 (+) and 4 (−), the outer two. Expect close to 5.0 V.</li>
+    <li>Plug the NodeMCU in with the data cable. Use its micro-USB port, not the <code>VIN</code> pin.</li>
+  </ol>
+  <div class="caution"><ul class="plain-list">
+    <li>The CPT label says 12 V and gives no input range or surge rating. Prefer a house-battery circuit over anything tied to the alternator or ignition.</li>
+    <li>Rough always-on draw: about 0.5 W including converter loss, roughly 1 Ah a day at 12 V. That's an estimate, not a measurement.</li>
+  </ul></div>
+</section>
+
+<section id="broker">
+  <h2>Step 1 · Pi: open the broker</h2>
+  <p>This adds a LAN listener on 1884 that requires a password. Port 1883 stays loopback-only and anonymous, so Home Assistant and <code>bme280-mqtt</code> keep working unchanged. Run it in your own Terminal, after the guide has been deployed to the Pi (<code>npm run deploy</code>), so the reference file below exists.</p>
+  <div class="code"><pre><code>ssh pi@vanpi.lan
+sudo cp /home/pi/visual-guides/current/static/reference/remote-bme280-mosquitto.conf.txt \
+  /etc/mosquitto/conf.d/lan-sensors.conf
+openssl rand -base64 18
+sudo mosquitto_passwd -c /etc/mosquitto/passwd van-climate-rear
+sudo chown root:mosquitto /etc/mosquitto/passwd
+sudo chmod 640 /etc/mosquitto/passwd
+sudo systemctl restart mosquitto
+systemctl is-active mosquitto home-assistant bme280-mqtt
+ss -ltn | grep -E ':188[34]'</code></pre></div>
+  <p>Paste the <code>openssl</code> output at the <code>mosquitto_passwd</code> prompt (twice) and keep it for <code>secrets.yaml</code> in step 2. <code>-c</code> creates the file; leave it off when adding a second sensor later, or it wipes the first. <code>ss</code> should show <code>127.0.0.1:1883</code> and <code>*:1884</code>.</p>
+  <p>Check that the existing sensor still updates (Ctrl-C to stop):</p>
+  <div class="code"><pre><code>mosquitto_sub -h 127.0.0.1 -t 'vanpi/sensors/#' -v</code></pre></div>
+  <p class="small">The config file is <a href="../reference/remote-bme280-mosquitto.conf.txt">remote-bme280-mosquitto.conf.txt</a>. To undo: <code>sudo rm /etc/mosquitto/conf.d/lan-sensors.conf &amp;&amp; sudo systemctl restart mosquitto</code>. Port 1884 is also reachable over Tailscale. It's password-protected, but there's no per-topic ACL.</p>
+</section>
+
+<section id="firmware">
+  <h2>Step 2 · Mac: flash the node</h2>
+  <h3>Install ESPHome and fetch the config</h3>
+  <div class="code"><pre><code>brew install esphome
+mkdir -p ~/esphome &amp;&amp; cd ~/esphome
+curl -fsS http://127.0.0.1:8792/reference/remote-bme280-esphome.yaml.txt -o van-climate-rear.yaml
+curl -fsS http://127.0.0.1:8792/reference/remote-bme280-secrets.example.yaml.txt -o secrets.yaml
+chmod 600 secrets.yaml
+open -e secrets.yaml</code></pre></div>
+  <p>Fill in the dendelion Wi-Fi password and the MQTT password from step 1. Make up the OTA and fallback-hotspot passwords with <code>openssl rand -base64 18</code>. Keep <code>~/esphome</code> out of any Git repo.</p>
+  <p class="small">The files are <a href="../reference/remote-bme280-esphome.yaml.txt">remote-bme280-esphome.yaml.txt</a> and <a href="../reference/remote-bme280-secrets.example.yaml.txt">remote-bme280-secrets.example.yaml.txt</a>. Homebrew had ESPHome 2026.9.1 on 2026-10-13.</p>
+
+  <h3>First flash over USB</h3>
+  <p>Wire the sensor first, then plug the board into the Mac and find its port:</p>
+  <div class="code"><pre><code>ls /dev/cu.*
+esphome run van-climate-rear.yaml --device /dev/cu.usbserial-XXXX</code></pre></div>
+  <p>Use whichever new <code>cu.usbserial-…</code> or <code>cu.SLAB_USBtoUART</code> entry appeared. The first compile takes several minutes. After uploading, <code>run</code> streams the serial log. Look for:</p>
+  <ul class="plain-list">
+    <li><code>Found i2c device at address 0x76</code>. If it says <code>0x77</code>, change <code>address:</code> in the YAML and run again.</li>
+    <li>The Wi-Fi connected and MQTT connected lines.</li>
+    <li>Temperature, pressure and humidity values about once a minute, with no BME280 error.</li>
+  </ul>
+  <p class="small">If no new port appears, try another cable first (see <a href="#troubleshooting">Troubleshooting</a>). Ctrl-C stops the log, not the node.</p>
+
+  <h3>Later updates over Wi-Fi</h3>
+  <div class="code"><pre><code>cd ~/esphome
+esphome run van-climate-rear.yaml --device van-climate-rear.local</code></pre></div>
+  <p class="small">OTA uses the <code>ota_password</code>. If <code>.local</code> doesn't resolve, use the IP shown in the router's DHCP leases.</p>
+</section>
+
+<section id="ha">
+  <h2>Step 3 · Home Assistant</h2>
+  <p>Nothing to configure. Discovery adds a device named <strong>Van climate rear</strong> with Temperature, Humidity, Pressure and Wi-Fi signal sensors. Find it under Settings → Devices &amp; services → MQTT. Check the raw messages on the Pi:</p>
+  <div class="code"><pre><code>mosquitto_sub -h 127.0.0.1 -t 'vanpi/sensors/van_climate_rear/#' -v</code></pre></div>
+  <div class="table-wrap"><table><thead><tr><th>Topic</th><th>Payload</th></tr></thead><tbody>
+    <tr><td><code>vanpi/sensors/van_climate_rear/status</code></td><td><code>online</code>, retained. The broker sets <code>offline</code> when the node drops off.</td></tr>
+    <tr><td><code>…/sensor/temperature/state</code></td><td>°C</td></tr>
+    <tr><td><code>…/sensor/humidity/state</code></td><td>% RH</td></tr>
+    <tr><td><code>…/sensor/pressure/state</code></td><td>hPa</td></tr>
+    <tr><td><code>…/sensor/wi-fi_signal/state</code></td><td>dBm. Below about −80 means the node needs a better spot.</td></tr>
+  </tbody></table></div>
+  <p class="small">The Pi sensor publishes one JSON object; this node publishes one topic per value. Both are under <code>vanpi/sensors/</code>, and Home Assistant treats them the same way.</p>
+</section>
+
+<section id="placement">
+  <h2>Placement and accuracy</h2>
+  <ul class="plain-list">
+    <li><strong>Keep the sensor out of the box.</strong> A sealed IP65 box blocks humidity exchange and traps the ESP8266's heat. Run the four leads through a small hole in the box's bottom face and let the sensor hang 10 cm or more below it, port facing the room.</li>
+    <li><strong>Below, not above.</strong> Warm air from the board and buck rises. Keep both above the sensor or off to one side.</li>
+    <li>Not on an outside wall panel, in sun through a window, near the heater or fridge vent, or in cooking steam. Those are worth measuring separately, not by accident.</li>
+    <li>Low oversampling and a 60 s interval keep the sensor from heating itself. Shortening the interval raises the reading.</li>
+    <li><strong>Calibrate against the Pi sensor.</strong> Put both side by side for 30 minutes, then add an offset to the node's temperature if the two differ consistently:</li>
+  </ul>
+  <div class="code"><pre><code>    temperature:
+      name: Temperature
+      oversampling: 1x
+      filters:
+        - offset: -0.5</code></pre></div>
+  <p class="small">Pressure tracks weather and altitude, not van climate. Both sensors should agree within about 1 hPa. A larger gap points to a faulty sensor, not placement.</p>
+</section>
+
+<section id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Fix</th></tr></thead><tbody>
+    <tr><td>No new <code>/dev/cu.*</code> port</td><td>Charge-only cable; try the data cable. Then try another USB port or hub. Still nothing: install the Silicon Labs CP210x VCP driver.</td></tr>
+    <tr><td>Upload times out at “Connecting…”</td><td>Hold <code>FLASH</code>, tap <code>RST</code>, release <code>FLASH</code>, and run again. Unplug anything on D3, D4 or D8.</td></tr>
+    <tr><td>I²C scan finds nothing</td><td>SDA/SCL swapped, sensor on 5 V instead of 3V3, or a loose Dupont end. On the 6-pin board, check CSB and SDO.</td></tr>
+    <tr><td><code>Wrong chip ID or no response</code> while the scan does find 0x76/0x77</td><td>Most likely a BMP280 (no humidity). Change the platform to <code>bmp280_i2c</code> and delete the humidity block, or fit a real BME280.</td></tr>
+    <tr><td>Wi-Fi never connects, fallback hotspot appears</td><td>Wrong SSID or password in <code>secrets.yaml</code>. Join the hotspot from a phone and enter it there, or reflash over USB. If other new devices can't join <code>dendelion</code> either, the router has the known SAE association fault: run <code>wifi down radio0; wifi up radio0</code> on the router.</td></tr>
+    <tr><td>Wi-Fi connects, MQTT doesn't</td><td>On the Pi: <code>ss -ltn | grep 1884</code> and <code>sudo tail /var/log/mosquitto/mosquitto.log</code>. “not authorised” means the password in <code>secrets.yaml</code> doesn't match <code>mosquitto_passwd</code>.</td></tr>
+    <tr><td>Messages on the broker but no device in Home Assistant</td><td>Check the MQTT integration is still connected (Settings → Devices &amp; services → MQTT), then restart Home Assistant once to resend discovery.</td></tr>
+    <tr><td>Temperature reads high</td><td>See <a href="#placement">placement</a>: move the sensor below and away from the board, then calibrate.</td></tr>
+  </tbody></table></div>
+</section>
+
+<section id="why-wireless">
+  <h2>Why not wire it to the Pi</h2>
+  <p>I²C is meant for a single board. Across a van, cable capacitance runs past the bus's 400 pF limit, and the Pi's BME280 already uses its software I²C bus on GPIO23/24. A cable run would need a differential I²C extender at each end (PCA9615-type) and a cable routed through the walls, which is more parts than the Wi-Fi node and still adds a fault path into the Pi's GPIO.</p>
+  <div class="table-wrap"><table><thead><tr><th>Other routes</th><th>Trade-off</th></tr></thead><tbody>
+    <tr><td>ESPHome native API instead of MQTT</td><td>Needs the ESPHome integration added to Home Assistant 2024.3, about two and a half years older than current ESPHome firmware. MQTT works with both versions and leaves the broker as the single path.</td></tr>
+    <tr><td>Off-the-shelf BLE thermometer</td><td>No wiring or power work, but it doesn't use the BME280 or give you pressure.</td></tr>
+    <tr><td>ideaspark ESP32 or ESP8266 OLED board</td><td>Also in the inventory and could show the reading locally. But the display pin routing is unverified, and the extra heat sits closer to the sensor.</td></tr>
+  </tbody></table></div>
+</section>
+
+<section id="sources">
+  <h2>Sources</h2>
+  <ul class="sources">
+    <li><a href="https://esphome.io/components/sensor/bme280/">ESPHome BME280 sensor</a><span class="why"><code>bme280_i2c</code> platform, default address 0x77, forced mode, oversampling, CSB note.</span></li>
+    <li><a href="https://esphome.io/components/mqtt/">ESPHome MQTT client</a><span class="why">Topic layout, discovery, birth/will, and running without <code>api:</code>.</span></li>
+    <li><a href="https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf">Bosch BME280 datasheet</a><span class="why">1.71–3.6 V supply, chip ID 0x60, address strap.</span></li>
+    <li><a href="https://mosquitto.org/man/mosquitto-conf-5.html">mosquitto.conf(5)</a><span class="why"><code>listener</code>, <code>per_listener_settings</code>, <code>password_file</code>.</span></li>
+    <li>Inventory records in <code>~/dev/electronics-inventory/items/</code><span class="why">IDs listed under Parts.</span></li>
+    <li>vanpi, inspected read-only 2026-10-13<span class="why">Mosquitto listener and config, HA version and MQTT entry, live <code>vanpi_bme280_1</code> messages.</span></li>
+  </ul>
+</section>
+</main></div>
+</body></html>

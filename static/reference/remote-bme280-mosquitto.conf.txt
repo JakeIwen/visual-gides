@@ -1,0 +1,13 @@
+# /etc/mosquitto/conf.d/lan-sensors.conf on vanpi
+# Mosquitto 2 listens only on loopback until a listener is defined. Defining
+# any listener removes that default, so the loopback one is restated here.
+per_listener_settings true
+
+# Existing local clients (Home Assistant, bme280-mqtt) stay anonymous on loopback.
+listener 1883 127.0.0.1
+allow_anonymous true
+
+# Network sensors must log in.
+listener 1884
+allow_anonymous false
+password_file /etc/mosquitto/passwd
