@@ -4,7 +4,7 @@ Local documentation library and guarded A/C infrared controller.
 
 - Mac: [localhost:8792](http://127.0.0.1:8792).
 - Pi: [vanpi.lan:8791](http://vanpi.lan:8791).
-- Source: [JakeIwen/visual-gides](https://github.com/JakeIwen/visual-gides).
+- Source: [JakeIwen/visual-guides](https://github.com/JakeIwen/visual-guides).
 
 This standalone repository retains the guide history extracted from
 `JakeIwen/scripts`. The checkout is `~/dev/visual-guides`.

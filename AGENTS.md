@@ -1,6 +1,6 @@
 # Visual Guides
 
-Standalone public source repository: `JakeIwen/visual-gides`. The local checkout
+Standalone public source repository: `JakeIwen/visual-guides`. The local checkout
 is `~/dev/visual-guides`; it was extracted from `JakeIwen/scripts` with its four
 guide commits preserved. Do not add a second copy to the scripts repository.
 
