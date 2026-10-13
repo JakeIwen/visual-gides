@@ -54,6 +54,10 @@ tests use temporary state and mocked launchd boundaries, without installing a
 job. Keep files under 800 lines and functions under 80 unless a reviewed reason
 requires an explicit exception. Reuse existing helpers before adding any.
 
+Commit and push (`c/p`) is the default here: Jacob rates this repo low-risk, so
+once a change is finished and tests pass, commit it to `main` and push without
+asking. This does not cover deployment or Pi hardware changes.
+
 Keep substantive unfinished work in ignored `.agent/handoffs/`; remove completed
 handoffs after promoting durable facts here. Commit extraction/setup separately
 from behavioral changes. Never publish private operational context.
