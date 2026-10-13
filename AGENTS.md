@@ -56,7 +56,11 @@ requires an explicit exception. Reuse existing helpers before adding any.
 
 Commit and push (`c/p`) is the default here: Jacob rates this repo low-risk, so
 once a change is finished and tests pass, commit it to `main` and push without
-asking. This does not cover deployment or Pi hardware changes.
+asking. Deployment goes with it: after every push, run `npm run deploy` without
+asking, and report its outcome. If the deploy check fails, stop and report rather
+than forcing it. This still does not cover Pi hardware changes: GPIO setup,
+`hardware_setup.py configure`, enabling transmission, or system config outside the
+Visual Guides release (such as Mosquitto).
 
 Keep substantive unfinished work in ignored `.agent/handoffs/`; remove completed
 handoffs after promoting durable facts here. Commit extraction/setup separately
