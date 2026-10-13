@@ -14,6 +14,9 @@ This standalone repository retains the guide history extracted from
   setup, policy selection, observation/active modes, status and recovery for the
   unpublished 0.2.0-r1 OpenWrt candidate. Page controls only prepare scripts and
   illustrations; there is no router API or automatic installation.
+- [CAN workbench](http://vanpi.lan:8791/guides/can-workbench.html): running the
+  obd-things offline CAN report CLI, its manifest format and reading its reports.
+  Static reference only; it reads no captures.
 
 Python 3.10+ standard library only; no npm build, external fonts, or CDN.
 Node is used for JavaScript checks and optional npm command aliases.

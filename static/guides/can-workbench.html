@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CAN workbench · Visual Guides</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Visual Guides &amp; Documentation</a><span aria-hidden="true">/</span><span aria-current="page">CAN workbench</span></nav>
+<div class="page">
+<nav class="toc" aria-label="Sections">
+  <a href="#overview">How it fits</a>
+  <a href="#run">Generate a report</a>
+  <a href="#options">CLI options</a>
+  <a href="#manifest">Write a manifest</a>
+  <a href="#evidence">References and analyses</a>
+  <a href="#report">Read the report</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#limits">Limits and rules</a>
+  <a href="#docs">Docs and tests</a>
+  <a href="https://github.com/JakeIwen/visual-gides/blob/main/static/guides/can-workbench.html">Source</a>
+  <a href="https://github.com/JakeIwen/visual-gides/commits/main/static/guides/can-workbench.html">History</a>
+</nav>
+<main>
+<h1>CAN workbench</h1>
+<dl class="facts">
+  <dt>Use</dt><dd>Plot explicitly defined CAN fields from saved candump captures, beside any independent reference readings and correlator output, in one self-contained HTML report.</dd>
+  <dt>Repository</dt><dd><code>~/dev/obd-things</code> · CLI <code>tools/can_workbench_report.py</code> · package <code>tools/can_workbench/</code></dd>
+  <dt>Requires</dt><dd>Python 3.11+ standard library. The <code>zstd</code> executable only for <code>.zst</code> captures.</dd>
+  <dt>Output</dt><dd>A new directory holding <code>index.html</code> (viewer and data embedded) and <code>bundle.json</code>. Default: <code>tmp/can_workbench/report-&lt;UTC&gt;/</code>.</dd>
+  <dt>Vehicle access</dt><dd>None. Saved files only; no live interface, broker, or service is touched.</dd>
+  <dt>Status</dt><dd><span class="tag ok">Working · 25 tests pass</span> Not linked from the telemetry dashboard.</dd>
+  <dt>Updated</dt><dd>2026-10-12</dd>
+</dl>
+
+<section id="overview">
+  <h2>How it fits</h2>
+  <figure>
+    <div class="schematic">
+      <svg viewBox="0 0 760 300" role="img" aria-labelledby="flow-title flow-desc">
+        <title id="flow-title">Workbench data flow</title>
+        <desc id="flow-desc">A manifest names saved captures, field definitions, optional reference files and optional correlator reports. The report CLI reads them, hashes them before and after, and publishes a new directory containing index.html and bundle.json.</desc>
+        <rect class="sv-board" x="10" y="20" width="230" height="260" rx="8"/>
+        <text class="sv-text sv-strong" x="26" y="46">investigation.json</text>
+        <text class="sv-text sv-muted" x="26" y="66">manifest · paths beside it</text>
+        <rect class="sv-part w-gpio" x="26" y="82" width="198" height="40" rx="5"/>
+        <text class="sv-text" x="38" y="107">captures (.log / .zst)</text>
+        <rect class="sv-part w-gpio" x="26" y="130" width="198" height="40" rx="5"/>
+        <text class="sv-text" x="38" y="155">fields (bit geometry)</text>
+        <rect class="sv-part w-sw" x="26" y="178" width="198" height="40" rx="5"/>
+        <text class="sv-text" x="38" y="203">references (optional)</text>
+        <rect class="sv-part w-sw" x="26" y="226" width="198" height="40" rx="5"/>
+        <text class="sv-text" x="38" y="251">analyses (optional)</text>
+        <path class="sv-wire w-gnd" d="M240 150 H300"/>
+        <path class="sv-wire w-gnd" d="M292 143 L300 150 L292 157"/>
+        <rect class="sv-part w-fet" x="296" y="90" width="206" height="120" rx="8"/>
+        <text class="sv-text sv-strong" x="316" y="118">can_workbench_report</text>
+        <text class="sv-text sv-muted" x="316" y="142">hash inputs · stream frames</text>
+        <text class="sv-text sv-muted" x="316" y="162">extract · stats · decimate</text>
+        <text class="sv-text sv-muted" x="316" y="182">re-hash · stage · rename</text>
+        <path class="sv-wire w-gnd" d="M502 150 H550"/>
+        <path class="sv-wire w-gnd" d="M542 143 L550 150 L542 157"/>
+        <rect class="sv-board" x="550" y="70" width="200" height="160" rx="8"/>
+        <text class="sv-text sv-strong" x="566" y="96">new output dir</text>
+        <rect class="sv-part w-led" x="566" y="110" width="168" height="40" rx="5"/>
+        <text class="sv-text" x="578" y="135">index.html</text>
+        <rect class="sv-part w-led" x="566" y="160" width="168" height="40" rx="5"/>
+        <text class="sv-text" x="578" y="185">bundle.json</text>
+      </svg>
+    </div>
+    <span class="schematic-hint">Swipe the diagram sideways to see the output.</span>
+    <figcaption>Blue inputs are required, grey are optional. Nothing is inferred: every channel-to-bus mapping and field geometry comes from the manifest.</figcaption>
+  </figure>
+  <p>The workbench is a viewer for decisions already made elsewhere. It does not search for signals, fit formulas, or promote a field into the bus map or telemetry. Field selections are local to one investigation; <code>docs/bus-map.md</code> stays the canonical decode list.</p>
+</section>
+
+<section id="run">
+  <h2>Generate a report</h2>
+  <h3>Try the synthetic example</h3>
+  <p>Run from the repository root. The fixture is software test data, not vehicle evidence.</p>
+  <div class="code"><pre><code>cd ~/dev/obd-things
+python3 tools/can_workbench_report.py \
+  tests/fixtures/can_workbench/investigation.json \
+  --out tmp/can_workbench/demo
+open tmp/can_workbench/demo/index.html</code></pre></div>
+  <p class="small">Keep <code>bundle.json</code> beside the HTML; the report's download link points to it. <code>--out</code> must be a directory that does not exist yet.</p>
+
+  <h3>Run your own investigation</h3>
+  <ol>
+    <li>Make a folder for the investigation (under <code>tmp/</code>, which is gitignored) and write <code>investigation.json</code> there. Relative paths resolve beside the manifest.</li>
+    <li>Point each capture's <code>path</code> at a finalized candump file. Files that are still being written will fail the before/after hash check.</li>
+    <li>Add each field with geometry taken from the bus map or a reviewed analysis, and record where it came from in <code>provenance</code>.</li>
+    <li>Generate, then narrow with <code>--capture</code>, <code>--field</code> and <code>--window</code> if you need full detail for a short span.</li>
+  </ol>
+  <div class="code"><pre><code>python3 tools/can_workbench_report.py tmp/my-question/investigation.json \
+  --field battery_voltage --window 30 90 --gap-seconds 0.5</code></pre></div>
+  <p class="small">Without <code>--out</code>, each run lands in a fresh <code>tmp/can_workbench/report-&lt;UTC timestamp&gt;/</code>. Earlier reports are never overwritten. The exact command, Python version, tool hashes and input hashes are stored in the bundle.</p>
+</section>
+
+<section id="options">
+  <h2>CLI options</h2>
+  <div class="table-wrap"><table><thead><tr><th>Option</th><th>Default</th><th>Effect</th></tr></thead><tbody>
+    <tr><td><code>manifest</code></td><td>required</td><td>Schema-1 investigation JSON.</td></tr>
+    <tr><td><code>--out DIR</code></td><td><code>tmp/can_workbench/report-&lt;UTC&gt;</code></td><td>New output directory. An existing one is refused.</td></tr>
+    <tr><td><code>--capture NAME</code></td><td>all</td><td>Select a capture by manifest name. Repeatable.</td></tr>
+    <tr><td><code>--field NAME</code></td><td>all</td><td>Select a field by manifest name. Repeatable.</td></tr>
+    <tr><td><code>--window START END</code></td><td>whole capture</td><td>Inclusive elapsed seconds from each capture's first valid frame. Statistics then cover only this window.</td></tr>
+    <tr><td><code>--gap-seconds S</code></td><td>1</td><td>A larger spacing between observations counts as a gap and breaks the plotted line. Set it to the signal's normal cadence.</td></tr>
+    <tr><td><code>--max-points N</code></td><td>2,000</td><td>Plotted points per series (4–20,000). Counts, minima, maxima and gaps always use every observation.</td></tr>
+  </tbody></table></div>
+</section>
+
+<section id="manifest">
+  <h2>Write a manifest</h2>
+  <p>Required top-level keys are <code>schema_version</code> (1), <code>title</code>, <code>summary</code>, <code>captures</code> and <code>fields</code>. Optional: <code>questions</code>, <code>next_checks</code>, <code>references</code>, <code>analyses</code>. Unknown keys are rejected, so typos fail loudly.</p>
+  <div class="code"><pre><code>{
+  "schema_version": 1,
+  "title": "Charging voltage at idle",
+  "summary": "Does the candidate track the meter reading?",
+  "questions": ["Does it lag the meter during load changes?"],
+  "next_checks": ["Repeat with headlights on."],
+  "captures": [
+    {"name": "idle", "path": "idle.log",
+     "channels": {"can0": "B-CAN"},
+     "conditions": "Engine idling, no accessories"}
+  ],
+  "fields": [
+    {"name": "battery_voltage", "bus": "B-CAN", "channel": "can0",
+     "can_id": "46C", "id_bits": 11, "dlc": 8,
+     "field": {"dbc_start_bit": 36, "length_bits": 13,
+               "byte_order": "big", "signed": false},
+     "scale": 0.0025, "offset": 0, "unit": "V",
+     "evidence_tier": "verified_decode",
+     "provenance": "docs/bus-map.md 0x46C system voltage, low 13 bits"}
+  ],
+  "references": ["meter.json"],
+  "analyses": []
+}</code></pre></div>
+  <p class="small">The field matches the bus map's verified 0x46C voltage decode (bytes 4–5 big-endian, mask <code>0x1FFF</code>, ÷ 400). The capture and reference names are examples. Check the bus map for the current definition before reusing it.</p>
+
+  <h3>Captures</h3>
+  <div class="table-wrap"><table><thead><tr><th>Key</th><th>Meaning</th></tr></thead><tbody>
+    <tr><td><code>name</code></td><td>Unique label used by <code>--capture</code> and the report.</td></tr>
+    <tr><td><code>path</code></td><td>candump text log, optionally <code>.zst</code>. Read-only.</td></tr>
+    <tr><td><code>channels</code></td><td>Every recorded interface mapped to a bus name, e.g. <code>{"can0": "B-CAN"}</code>. Required for every channel in the file; routing is never guessed from CAN IDs.</td></tr>
+    <tr><td><code>conditions</code></td><td>What the vehicle was doing. Use <code>unknown</code> when you don't know; a filename alone isn't evidence.</td></tr>
+  </tbody></table></div>
+  <p class="small">Each capture keeps its own clock. When comparing stream inventories, the first selected capture is the baseline, and only interfaces mapped to the same bus in both captures are compared.</p>
+
+  <h3>Fields</h3>
+  <div class="table-wrap"><table><thead><tr><th>Key</th><th>Meaning</th></tr></thead><tbody>
+    <tr><td><code>bus</code>, <code>channel</code></td><td>Must match a capture mapping exactly. A field is not looked for on other buses.</td></tr>
+    <tr><td><code>can_id</code></td><td>Hex string without <code>0x</code>. 11-bit <code>123</code> and 29-bit <code>00000123</code> are different streams.</td></tr>
+    <tr><td><code>id_bits</code>, <code>dlc</code></td><td>11 or 29; exact payload length. Frames with another DLC are excluded.</td></tr>
+    <tr><td><code>field</code></td><td><code>dbc_start_bit</code>, <code>length_bits</code>, <code>byte_order</code> (<code>little</code> or Motorola <code>big</code>), <code>signed</code>. Same extractor as the rest of the repo.</td></tr>
+    <tr><td><code>scale</code>, <code>offset</code>, <code>unit</code></td><td>Plotted value is <code>raw × scale + offset</code>. Use unit <code>raw</code> when unknown.</td></tr>
+    <tr><td><code>evidence_tier</code></td><td>One of the three tiers below.</td></tr>
+    <tr><td><code>provenance</code></td><td>Required. Where the definition came from.</td></tr>
+    <tr><td><code>supporting_evidence</code>, <code>contradicting_evidence</code></td><td>Optional lists of notes shown with the field.</td></tr>
+  </tbody></table></div>
+
+  <h3>Evidence tiers</h3>
+  <div class="table-wrap"><table><tbody>
+    <tr><td><code>exploratory_candidate</code></td><td>A guess worth plotting, such as a correlator hit.</td></tr>
+    <tr><td><code>operational_proxy</code></td><td>Good enough to use, not proven to be the physical quantity.</td></tr>
+    <tr><td><code>verified_decode</code></td><td>Confirmed against an independent measurement.</td></tr>
+  </tbody></table></div>
+  <p class="small">The tier is a label you supply. The tool displays it and checks nothing about it.</p>
+</section>
+
+<section id="evidence">
+  <h2>References and analyses</h2>
+  <h3>Reference readings</h3>
+  <p>A reference file holds independent observations (meter, scan tool, phone log) for one capture and field. They are drawn in orange on the same plot.</p>
+  <div class="code"><pre><code>{
+  "schema_version": 1,
+  "capture": "idle",
+  "field": "battery_voltage",
+  "name": "Multimeter at battery",
+  "unit": "V",
+  "provenance": "Hand-logged; clock aligned to capture start by ...",
+  "timestamp_basis": "capture_clock",
+  "observations": [
+    {"timestamp": "1696000012.500", "value": 14.21}
+  ]
+}</code></pre></div>
+  <ul class="plain-list">
+    <li>Timestamps are <strong>strings</strong> on the capture's own clock. Numeric timestamps are rejected. Align clocks yourself first and say how in <code>provenance</code>.</li>
+    <li>The unit must match the field's unit. There is no interpolation or resampling.</li>
+    <li>An empty <code>observations</code> list means “no reference”, and is shown that way. A missing file is an error.</li>
+  </ul>
+  <h3>Correlator reports</h3>
+  <p><code>analyses</code> takes existing schema-1 JSON output of <code>can_timeseries_correlate</code>. The report shows its ranked candidates, rejections and settings, marked exploratory. Imported candidates are not attached to your fields automatically, and no analysis tool runs when the report is generated or opened.</p>
+</section>
+
+<section id="report">
+  <h2>Read the report</h2>
+  <div class="table-wrap"><table><thead><tr><th>Section</th><th>What it shows</th></tr></thead><tbody>
+    <tr><td class="lead-cell">Recordings &amp; conditions</td><td>Each capture's channel→bus mapping, frame count, exact first/last timestamp, malformed or unterminated line counts, and the inventory comparison between captures.</td></tr>
+    <tr><td class="lead-cell">Inspect a field</td><td>Pick recording and field. Metrics, then a plot of the field (teal) and references (orange). The start/end boxes filter plotted points only.</td></tr>
+    <tr><td class="lead-cell">Candidate evidence</td><td>Imported correlator reports, open questions and next checks from the manifest.</td></tr>
+    <tr><td class="lead-cell">Reproduce &amp; export</td><td>Exact command, environment, tool and input hashes, the original manifest, and the <code>bundle.json</code> download.</td></tr>
+  </tbody></table></div>
+  <h3>Series status</h3>
+  <div class="table-wrap"><table><tbody>
+    <tr><td><span class="tag ok">varying</span></td><td>Two or more observations with different values.</td></tr>
+    <tr><td><span class="tag">constant</span></td><td>Every observation is the same value. Can't show a relationship to anything.</td></tr>
+    <tr><td><span class="tag">insufficient</span></td><td>Exactly one observation.</td></tr>
+    <tr><td><span class="tag warn">missing</span></td><td>No matching frames for that channel, ID, ID width and DLC in the selected range.</td></tr>
+  </tbody></table></div>
+  <p>If the field's bus and channel are not mapped in the chosen recording, the plot says so. The field is not looked for on another bus.</p>
+  <div class="caution"><p>The plot is decimated with a fixed stride. A short spike or a brief segment can be missing from the line even though it is in the min/max and counts. For full detail, regenerate with a narrower <code>--window</code>.</p></div>
+</section>
+
+<section id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <div class="table-wrap"><table><thead><tr><th>Message or symptom</th><th>Fix</th></tr></thead><tbody>
+    <tr><td><code>output already exists; choose a new directory</code></td><td>Pass a new <code>--out</code>, or omit it to get a timestamped directory.</td></tr>
+    <tr><td><code>unknown or empty field selection</code></td><td>The <code>--field</code> or <code>--capture</code> name doesn't match the manifest's <code>name</code>.</td></tr>
+    <tr><td><code>window must be ordered, nonnegative elapsed seconds</code></td><td>Use <code>--window START END</code> with 0 ≤ START ≤ END.</td></tr>
+    <tr><td><code>FILE:LINE: timestamps decrease</code></td><td>The capture isn't in time order. Split it at the jump or sort it upstream, and note that in <code>conditions</code>.</td></tr>
+    <tr><td><code>input changed during generation: PATH</code></td><td>A capture was still being written. Use a finalized copy.</td></tr>
+    <tr><td><code>.zst</code> fails or is truncated</td><td>Install <code>zstd</code> (<code>brew install zstd</code>) and check the archive with <code>zstd -t FILE</code>.</td></tr>
+    <tr><td>Field shows <span class="tag warn">missing</span></td><td>Check <code>channel</code>, <code>can_id</code>, <code>id_bits</code> and <code>dlc</code> against the capture's summary in the Recordings section; all four must match.</td></tr>
+  </tbody></table></div>
+</section>
+
+<section id="limits">
+  <h2>Limits and rules</h2>
+  <ul class="plain-list">
+    <li>Up to 16 captures, 64 fields, 32 reference files and 32 analysis files per report; 16 MiB per JSON input; 64 KiB per capture line; 4,096 streams per capture inventory.</li>
+    <li>Captures are streamed, so large and compressed logs are fine. A 250,000-frame synthetic capture took about 2.5 s.</li>
+    <li>Different captures are never time-aligned to each other. Elapsed seconds count from each capture's own first frame.</li>
+    <li>Generated reports contain file paths and raw statistics. Treat them as private evidence and review before sharing.</li>
+    <li>Output stays under the gitignored <code>tmp/</code>. To keep a report, promote it deliberately into <code>projects/&lt;project&gt;/findings/</code> next to the analysis that cites it.</li>
+  </ul>
+</section>
+
+<section id="docs">
+  <h2>Docs and tests</h2>
+  <ul class="sources">
+    <li><a href="https://github.com/JakeIwen/obd-things/blob/master/tools/can_workbench/README.md">tools/can_workbench/README.md</a><span class="why">Full input contracts, parsing rules and bounds.</span></li>
+    <li><a href="https://github.com/JakeIwen/obd-things/blob/master/tools/can_workbench/verification.md">verification.md</a><span class="why">Test, performance and browser checks from 2026-10-03.</span></li>
+    <li><a href="https://github.com/JakeIwen/obd-things/tree/master/tests/fixtures/can_workbench">tests/fixtures/can_workbench/</a><span class="why">Complete manifest, reference and correlator examples.</span></li>
+  </ul>
+  <p class="small">Tests: <code>python3 -m unittest tests.test_can_workbench</code> from the repository root.</p>
+</section>
+</main></div>
+</body></html>
