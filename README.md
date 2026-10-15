@@ -17,6 +17,8 @@ This standalone repository retains the guide history extracted from
 - [CAN workbench](http://vanpi.lan:8791/guides/can-workbench.html): running the
   obd-things offline CAN report CLI, its manifest format and reading its reports.
   Static reference only; it reads no captures.
+- [Claude /clean](http://vanpi.lan:8791/guides/clean-output.html): the
+  clean-output Claude Code mod: usage, before/after output, adding filters.
 
 Python 3.10+ standard library only; no npm build, external fonts, or CDN.
 Node is used for JavaScript checks and optional npm command aliases.

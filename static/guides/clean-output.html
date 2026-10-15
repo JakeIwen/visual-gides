@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude /clean · Visual Guides</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/site.css">
+</head>
+<body>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Visual Guides &amp; Documentation</a><span aria-hidden="true">/</span><span aria-current="page">Claude /clean</span></nav>
+<div class="page">
+<nav class="toc" aria-label="Sections">
+  <a href="#what">What it removes</a>
+  <a href="#usage">Usage</a>
+  <a href="#pane">The pane</a>
+  <a href="#example">Before and after</a>
+  <a href="#filters">Add a filter</a>
+  <a href="#install">Where it lives</a>
+  <a href="#limits">Limits</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="https://github.com/JakeIwen/visual-guides/blob/main/static/guides/clean-output.html">Source</a>
+  <a href="https://github.com/JakeIwen/visual-guides/commits/main/static/guides/clean-output.html">History</a>
+</nav>
+<main>
+<h1>Claude /clean</h1>
+<dl class="facts">
+  <dt>Use</dt><dd>Read or copy a Claude Code reply without the <code>Bash(...)</code> calls, collapsed results and search summaries that surround it in the terminal.</dd>
+  <dt>Kind</dt><dd>A Claude Code mod (plugin): one slash command and one pane. No server, no page, no transcript-file parsing.</dd>
+  <dt>Source</dt><dd><code>~/dev/scripts/shared/claude-mods/clean-output/</code> · <code>hooks/register.tsx</code> (command and pane) · <code>hooks/clean.ts</code> (filters)</dd>
+  <dt>Loaded by</dt><dd><code>env.CLAUDE_CODE_PLUGIN_DIRS</code> in <code>~/.claude/settings.json</code>, so every interactive Mac session has it. Not on the Pi.</dd>
+  <dt>Status</dt><dd><span class="tag ok">Validated · 4 tests pass · type-checks</span> Pane behaviour not yet exercised in a live session.</dd>
+  <dt>Updated</dt><dd>2026-10-15</dd>
+</dl>
+
+<section id="what">
+  <h2>What it removes</h2>
+  <p>Claude Code stores every assistant message as content blocks. A reply's prose is <em>text</em> blocks; each tool call is a <em>tool_use</em> block, and its output comes back as a <em>tool_result</em> block in a user-role message. The terminal draws all three. <code>/clean</code> asks the engine for the session's messages, keeps the text blocks of the reply you name, and drops everything else.</p>
+  <div class="table-wrap"><table><thead><tr><th>Terminal line</th><th>Transcript block</th><th>In /clean</th></tr></thead><tbody>
+    <tr><td><code>⏺ Bash(find ~/dev -type d ...)</code></td><td>tool_use</td><td>dropped (kept as one line with <code>tools</code>)</td></tr>
+    <tr><td><code>⎿ [Included] 2026-08-27 dev/...</code></td><td>tool_result</td><td>dropped</td></tr>
+    <tr><td><code>… +7 lines (ctrl+o to expand)</code></td><td>not stored; drawn by the UI</td><td>never existed</td></tr>
+    <tr><td><code>Searched for 1 pattern (ctrl+o to expand)</code></td><td>not stored; drawn by the UI</td><td>never existed</td></tr>
+    <tr><td><code>⏺ Now the empirical part: ...</code></td><td>text</td><td>kept</td></tr>
+    <tr><td>the final answer</td><td>text</td><td>kept, rendered as markdown</td></tr>
+    <tr><td><code>※ recap: ...</code></td><td>not a message</td><td>never existed</td></tr>
+  </tbody></table></div>
+  <p class="small">Short narration lines between tool calls ("Checking what the scheduled job actually was") are text blocks, so they stay. A filter can drop them; see <a href="#filters">Add a filter</a>.</p>
+</section>
+
+<section id="usage">
+  <h2>Usage</h2>
+  <p>Type the command at the Claude Code prompt. A <em>reply</em> is everything the assistant wrote between two of your prompts; slash-command rows count as prompts.</p>
+  <div class="table-wrap"><table><thead><tr><th>Command</th><th>Effect</th></tr></thead><tbody>
+    <tr><td><code>/clean</code></td><td>Open the pane with the last reply, focused.</td></tr>
+    <tr><td><code>/clean 2</code></td><td>The reply before the last one. Any whole number counts back from the newest.</td></tr>
+    <tr><td><code>/clean copy</code></td><td>Copy the clean text to the clipboard and print one confirmation line. No pane.</td></tr>
+    <tr><td><code>/clean tools</code></td><td>Keep each tool call as one quoted line, <code>&gt; Bash find ~/dev -type d -name node_modules...</code>, in place.</td></tr>
+    <tr><td><code>/clean 3 copy</code></td><td>Words combine in any order.</td></tr>
+  </tbody></table></div>
+  <h3>Keys while the pane has focus</h3>
+  <div class="table-wrap"><table><thead><tr><th>Key</th><th>Does</th></tr></thead><tbody>
+    <tr><td>↑ ↓, PgUp PgDn</td><td>Scroll the pane body.</td></tr>
+    <tr><td><code>c</code></td><td>Copy the whole clean text (the terminal clipboard, or OSC 52 over SSH).</td></tr>
+    <tr><td>Esc</td><td>Close the pane and return the keyboard to the prompt.</td></tr>
+    <tr><td>Tab, Enter</td><td>Walk to the copy button and press it; same as <code>c</code>.</td></tr>
+    <tr><td>Mouse drag</td><td>Selects text in the pane like any terminal text. Only what is on screen is selectable, so use <code>c</code> for a long reply.</td></tr>
+  </tbody></table></div>
+  <p class="small">Esc at an empty prompt also closes it once the prompt has the keys back. Running <code>/clean</code> again while it is open replaces the content in place.</p>
+</section>
+
+<section id="pane">
+  <h2>The pane</h2>
+  <p>Inline above the prompt on a normal terminal, or docked beside the transcript in the fullscreen layout from 110 columns. The first row is a status line; the rest is the reply as markdown.</p>
+  <div class="code"><pre><code>┌ Clean ────────────────────────────────────────────────────────────────┐
+│ last reply (6 in session) · c: copy · esc closes · arrows scroll      │
+│                                                                        │
+│ Checking what the scheduled job actually was, and when it stopped.    │
+│                                                                        │
+│ Now the empirical part: does Spotlight actually skip the marked        │
+│ folders?                                                               │
+│                                                                        │
+│ Short answer to your question: fix_spotlight does nothing anymore,    │
+│ and the scheduled job was a separate Time Machine job that has been   │
+│ broken since July 19.                                                  │
+│                                                                        │
+│ fix_spotlight (alias in ~/.zshrc:590)                                  │
+│  • It puts an empty .metadata_never_index file in each node_modules.  │
+│    macOS ignores that file inside folders.                             │
+│  ▼                                                                     │
+└────────────────────────────────────────────────────────────────────────┘
+❯ </code></pre></div>
+  <p class="small">Mock-up. The frame, title and scroll marks are drawn by Claude Code; the mod supplies the status row and the markdown.</p>
+</section>
+
+<section id="example">
+  <h2>Before and after</h2>
+  <p>From a real session on 2026-10-15 (the <code>fix_spotlight</code> question). The "after" text is what the mod's rules produce for that transcript, written out by hand rather than captured from the pane.</p>
+  <h3>Terminal, as drawn</h3>
+  <div class="code"><pre><code>⏺ Bash(cd ~/dev/scripts; git log -1 --format='%h %ad %s' --date=iso ab43687; git show ab43687 --stat | grep -i -E
+      'time_machine_exclude|btt_backup|spotlight' ; echo --…)
+  ⎿  ab43687 2026-07-19 00:57:29 -0600 reorg
+      .../bettertouchtool/btt_backup.zsh                 |  36 ++++---
+     … +49 lines (ctrl+o to expand)
+
+⏺ Now the empirical part: does Spotlight actually skip the marked folders?
+
+⏺ Bash(for d in ~/ais/quickbase/node_modules ~/ais/fet/web/node_modules ~/dev/alt-clicky/node_modules
+      ~/ais/react-exact-form/node_modules ~/dev/lionfeather-dev/node_mo…)
+  ⎿  MARKED files=11747 indexed=0  /Users/jacobr/ais/quickbase/node_modules  marker_date=2024-01-06
+     … +3 lines (ctrl+o to expand)
+
+⏺ Everything shows 0 indexed, marked or not, so I need a control to make sure the query works.
+
+⏺ Bash(find ~/dev ~/ais -type d -name node_modules -prune 2&gt;/dev/null | grep -v -e '/\.bad\.' -e '/_npx/' | while read
+      d; do r=$(tmutil isexcluded "$d" 2&gt;&amp;1 | grep -o…)
+  ⎿  [Included] 2026-08-27 dev/scripts/pi/apps/van_dashboard/frontend/node_modules
+     … +7 lines (ctrl+o to expand)
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+⏺ Short answer to your question: fix_spotlight does nothing anymore, and the scheduled job was a separate
+  Time Machine job that has been broken since July 19.
+  ...</code></pre></div>
+  <h3><code>/clean</code></h3>
+  <div class="code"><pre><code>Checking what the scheduled job actually was, and when it stopped. Logs last updated Jul 19, so it looks like a reorg broke the cron paths.
+
+Now the empirical part: does Spotlight actually skip the marked folders?
+
+Everything shows 0 indexed, marked or not, so I need a control to make sure the query works.
+
+The wildcard query was bogus; -name package.json works. Re-running the comparison with that probe:
+
+Clear answer on Spotlight. Last check: whether the Time Machine side (the cron job) has gaps since it broke.
+
+Short answer to your question: fix_spotlight does nothing anymore, and the scheduled job was a separate Time Machine job that has been broken since July 19.
+
+**fix_spotlight** (alias in ~/.zshrc:590)
+- It puts an empty .metadata_never_index file in each node_modules. macOS ignores that file inside folders.
+- To test it, I compared Spotlight's index against the disk:
+  ...</code></pre></div>
+  <h3><code>/clean tools</code></h3>
+  <div class="code"><pre><code>Now the empirical part: does Spotlight actually skip the marked folders?
+
+&gt; `Bash` for d in ~/ais/quickbase/node_modules ~/ais/fet/web/node_modules ~/dev/alt-clicky/node_modules ~/ais/react-exact-form/no…
+
+Everything shows 0 indexed, marked or not, so I need a control to make sure the query works.
+
+&gt; `Bash` for d in ~/dev/lionfeather-dev ~/dev/scripts ~/ais/react-exact-form ~/Documents ~/dev; do echo "$(mdfind -onlyin "$d" -c…</code></pre></div>
+  <p class="small">Tool lines show the command for Bash, the path for Read or Edit, the pattern for Grep, cut to 100 characters. Results are never shown.</p>
+</section>
+
+<section id="filters">
+  <h2>Add a filter</h2>
+  <p>The reply becomes a list of parts, <code>{ kind: 'text' | 'tool', text }</code>, and <code>FILTERS</code> in <code>hooks/clean.ts</code> runs over that list in order. Each filter is a name and an <code>apply(parts, opts)</code> function; <code>opts</code> carries the command words (<code>back</code>, <code>copy</code>, <code>tools</code>). Append an entry, save, and run <code>/reload-plugins</code>.</p>
+  <div class="table-wrap"><table><thead><tr><th>Built in</th><th>Does</th></tr></thead><tbody>
+    <tr><td><code>drop-tools</code></td><td>Removes tool parts unless <code>tools</code> was given.</td></tr>
+    <tr><td><code>strip-context-blocks</code></td><td>Removes <code>&lt;context&gt;...&lt;/context&gt;</code> spans the reply hid from the terminal.</td></tr>
+    <tr><td><code>squeeze-blank-lines</code></td><td>Three or more newlines become two; trims each part.</td></tr>
+    <tr><td><code>drop-empty</code></td><td>Removes parts left empty by earlier filters.</td></tr>
+  </tbody></table></div>
+  <p>Example: drop the one-line narration that precedes a tool call, keeping only the paragraphs that make up the answer.</p>
+  <div class="code"><pre><code>// hooks/clean.ts, appended to FILTERS
+{
+  name: 'drop-narration',
+  apply: (parts, opts) =&gt;
+    opts.tools ? parts : parts.filter(p =&gt; p.kind !== 'text' || p.text.length &gt; 160 || p.text.includes('\n')),
+},</code></pre></div>
+  <p>A filter that needs a new command word adds it in <code>parseArgs</code> and a field in <code>CleanOptions</code>, both in the same file. Check the change before reloading:</p>
+  <div class="code"><pre><code>cd ~/dev/scripts/shared/claude-mods/clean-output
+claude plugin validate .
+claude plugin test .</code></pre></div>
+  <p class="small"><code>clean.ts</code> imports nothing from the engine, so the same filters can run over a Codex rollout file once a loader produces the same <code>{ role, text, toolUses, toolResults }</code> shape.</p>
+</section>
+
+<section id="install">
+  <h2>Where it lives</h2>
+  <ul class="plain-list">
+    <li>Source folder: <code>~/dev/scripts/shared/claude-mods/clean-output/</code> in the <code>JakeIwen/scripts</code> checkout. <code>.claude-plugin/plugin.json</code> names it; <code>hooks/hooks.json</code> points at <code>register.tsx</code>; <code>types/index.d.ts</code> declares the one state value the pane reads.</li>
+    <li>Loaded from <code>~/.claude/settings.json</code>: <code>"env": { "CLAUDE_CODE_PLUGIN_DIRS": "~/dev/scripts/shared/claude-mods/clean-output" }</code>. A second mod joins the value with <code>:</code>.</li>
+    <li>Interactive sessions watch the folder: a save reloads the module when the folder goes quiet. <code>/reload-plugins</code> forces it.</li>
+    <li>Editor types: after the first load, <code>.claude-plugin/types/</code> inside the mod folder holds the API declarations, and <code>tsc -p .</code> type-checks against them. The engine writes that folder and gitignores it.</li>
+    <li>Built with the <code>plugin-authoring</code> skill in Claude Code 2.1.300. The plugin API is early access and may change between releases; a break shows as a dim line in the transcript naming the mod and the reason.</li>
+  </ul>
+</section>
+
+<section id="limits">
+  <h2>Limits</h2>
+  <ul class="plain-list">
+    <li>Within one assistant message all text comes before its tool lines, because the engine hands the text blocks joined. Across messages the order is right, and with <code>tools</code> off it makes no difference.</li>
+    <li>A reply is cut at any user-role row that carries no tool result, so a slash command you ran mid-reply starts a new one. Count back with a number if the last reply looks short.</li>
+    <li>The pane draws up to 100,000 characters of markdown. Longer replies are cut by the engine, not the mod; <code>copy</code> is unaffected.</li>
+    <li>An inline pane takes about a third of the screen unless you drag or key it taller; the size you set is kept for the session. The dock is used only in the fullscreen layout.</li>
+    <li>Copy goes through Claude Code's clipboard path. Over plain SSH without OSC 52 support the command reports <code>no-clipboard</code>.</li>
+    <li>Claude only. Codex has no plugin surface for this; the filter file is portable, the display is not.</li>
+  </ul>
+</section>
+
+<section id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Fix</th></tr></thead><tbody>
+    <tr><td><code>/clean</code> is unknown</td><td>The session started before the env entry existed, or the folder moved. Check <code>grep PLUGIN_DIRS ~/.claude/settings.json</code>, then start a new session.</td></tr>
+    <tr><td><code>clean: no reply found yet.</code></td><td>No assistant message since the session began, or the number is larger than the count of replies.</td></tr>
+    <tr><td><code>clean: pane not placed (...)</code></td><td>The surface cannot draw panes (headless, <code>-p</code>). Use <code>/clean copy</code>.</td></tr>
+    <tr><td><code>clean: copy failed (no-clipboard)</code></td><td>The terminal refused the clipboard write. In iTerm2, allow clipboard access in Preferences › General › Selection.</td></tr>
+    <tr><td>A dim line names <code>clean-output</code> and a refused hook</td><td>The API changed under a Claude Code update. Run <code>claude plugin validate .</code> in the mod folder; the message names the call.</td></tr>
+    <tr><td>Narration lines clutter the pane</td><td>Add the <code>drop-narration</code> filter from <a href="#filters">Add a filter</a>.</td></tr>
+  </tbody></table></div>
+</section>
+</main></div>
+</body></html>
