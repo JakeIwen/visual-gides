@@ -43,8 +43,9 @@
   <div class="mock" aria-label="Mock-up of the picker page">
     <div class="m-head"><b>Always Remote</b><span class="m-sub">vanpi · 2 kept running · 2 with Remote Control <span class="k">1</span></span><span class="m-btn primary">+ New session <span class="k">2</span></span></div>
     <div class="m-bar"><span class="m-input">Search ( -exclude "phrase" dir: is:kept age:&lt;2d )</span><span class="m-btn">?</span><span class="k">3</span>
-      <span class="m-seg"><span class="on">All</span><span>Kept running</span><span>Open now</span></span>
-      <span class="m-seg"><span class="on">All tools</span><span>Claude</span><span>Codex</span></span><span class="k">4</span></div>
+      <span class="m-seg"><span class="on">All</span><span>Kept running</span><span>Open now</span></span><span class="k">4</span>
+      <span class="m-seg"><span class="on">All tools</span><span>Claude</span><span>Codex</span></span>
+      <span class="m-btn">Kept first ▾</span><span class="k">14</span></div>
     <div class="m-chips"><span class="m-chip on">All folders<i>27</i></span><span class="m-chip">~/dev/obd-things<i>9</i></span><span class="m-chip">~/dev/scripts<i>7</i></span><span class="m-chip">~/dev/can-fd<i>4</i></span><span class="m-chip zero">~/dev/ntfy<i>0</i></span><span class="k">5</span></div>
 
     <div class="m-card kept">
@@ -94,6 +95,7 @@
     <li><span class="k">11</span><span>The details panel of a Claude session. A Codex panel has Recent messages, Title / Rename, Working folder / Fork… and the resume command only.</span></li>
     <li><span class="k">12</span><span>Deleted sessions wait here 30 days with a Restore button and an <strong>Empty now</strong>.</span></li>
     <li><span class="k">13</span><span>The bar that appears once something is selected.</span></li>
+    <li><span class="k">14</span><span>Sort order, remembered per browser; see <a href="#find">Find sessions</a>.</span></li>
   </ol>
   <p class="small">The page fits a phone: the toolbar wraps and the panel fields stack. There is a dark theme following the system setting.</p>
 </section>
@@ -137,6 +139,15 @@
     <tr><td class="lead-cell"><code>age:&lt;2d</code> · <code>age:&gt;1w</code></td><td data-label="Matches">Last activity newer or older than that; units m, h, d, w.</td></tr>
   </tbody></table></div>
   <p class="small">An unparseable term shows a message under the toolbar instead of matching nothing. <kbd>/</kbd> jumps to the search box from anywhere on the page.</p>
+  <h3>Sort</h3>
+  <p>The drop-down at the end of the toolbar orders whatever the search and filters leave. Ties keep the previous order, so "Folder, then recent" lists each folder's sessions newest first.</p>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Order</th><th>Use it for</th></tr></thead><tbody>
+    <tr><td class="lead-cell">Kept first</td><td data-label="Use it for">The default: sessions with the switch on, then everything else by last activity.</td></tr>
+    <tr><td class="lead-cell">Recent activity · Oldest activity</td><td data-label="Use it for">What you were just doing; or, with <strong>Select all</strong>, clearing out sessions nobody has touched in months.</td></tr>
+    <tr><td class="lead-cell">Name A–Z</td><td data-label="Use it for">Finding a session you know by name, and spotting near-duplicate names before a rename is refused. Case is ignored and numbers sort naturally (2 before 10).</td></tr>
+    <tr><td class="lead-cell">Folder, then recent</td><td data-label="Use it for">Reviewing one project's sessions in context when more than one folder is shown.</td></tr>
+    <tr><td class="lead-cell">Largest first</td><td data-label="Use it for">Finding the long conversations worth forking or trimming. Sessions without a known size go last.</td></tr>
+  </tbody></table></div>
 </section>
 
 <section id="details">
