@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Always Remote · Visual Guides</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/site.css">
+  <link rel="stylesheet" href="../assets/always-remote-guide.css">
+</head>
+<body>
+<nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Visual Guides &amp; Documentation</a><span aria-hidden="true">/</span><span aria-current="page">Always Remote</span></nav>
+<div class="page">
+<nav class="toc" aria-label="Sections">
+  <a href="#page">The page</a>
+  <a href="#keep">Keep running</a>
+  <a href="#find">Find sessions</a>
+  <a href="#details">Details</a>
+  <a href="#bulk">Several at once</a>
+  <a href="#new">New session</a>
+  <a href="#delete">Delete and restore</a>
+  <a href="#codex">Codex sessions</a>
+  <a href="#cli">From a shell</a>
+  <a href="#service">Where it lives</a>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="https://github.com/JakeIwen/visual-guides/blob/main/static/guides/always-remote.html">Source</a>
+  <a href="https://github.com/JakeIwen/visual-guides/commits/main/static/guides/always-remote.html">History</a>
+</nav>
+<main>
+<h1>Always Remote</h1>
+<dl class="facts">
+  <dt>Use</dt><dd>Keep chosen Claude Code sessions running on vanpi with Remote Control on, so the phone can always reach them, and manage every Claude Code and Codex session on the Pi in one place: search, rename, fork, move, delete with undo, start new ones.</dd>
+  <dt>Open</dt><dd><a href="http://vanpi:8777">vanpi:8777</a> on the van LAN or over Tailscale. No login; anyone on either network can use it.</dd>
+  <dt>Kind</dt><dd>A user systemd service on the Pi (<code>claude-always-remote</code>): a supervisor that runs sessions in tmux, plus this web page and a CLI. Python standard library, no build step.</dd>
+  <dt>Source</dt><dd><code>~/dev/claude-always-remote</code> on the Pi · <code>JakeIwen/claude-always-remote</code> (private). The service runs from that checkout.</dd>
+  <dt>Status</dt><dd><span class="tag ok">In daily use</span> Codex support added 2026-10-15 on an API Codex marks experimental.</dd>
+  <dt>Updated</dt><dd>2026-10-15</dd>
+</dl>
+
+<section id="page">
+  <h2>The page</h2>
+  <p>One list of every session on the Pi, newest activity first. It refreshes itself every few seconds. Below is a mock-up with one session expanded; the numbers are explained under it.</p>
+  <div class="mock" aria-label="Mock-up of the picker page">
+    <div class="m-head"><b>Always Remote</b><span class="m-sub">vanpi · 2 kept running · 2 with Remote Control <span class="k">1</span></span><span class="m-btn primary">+ New session <span class="k">2</span></span></div>
+    <div class="m-bar"><span class="m-input">Search ( -exclude "phrase" dir: is:kept age:&lt;2d )</span><span class="m-btn">?</span><span class="k">3</span>
+      <span class="m-seg"><span class="on">All</span><span>Kept running</span><span>Open now</span></span>
+      <span class="m-seg"><span class="on">All tools</span><span>Claude</span><span>Codex</span></span><span class="k">4</span></div>
+    <div class="m-chips"><span class="m-chip on">All folders<i>27</i></span><span class="m-chip">~/dev/obd-things<i>9</i></span><span class="m-chip">~/dev/scripts<i>7</i></span><span class="m-chip">~/dev/can-fd<i>4</i></span><span class="m-chip zero">~/dev/ntfy<i>0</i></span><span class="k">5</span></div>
+
+    <div class="m-card kept">
+      <div class="m-row"><span class="m-check"></span><span class="k">6</span><span class="m-switch on"></span><span class="k">7</span>
+        <div class="m-main"><div class="m-title">Van telemetrics logger</div>
+          <div class="m-meta"><u>~/dev/obd-things</u><span>4m ago</span><code>c96934f7</code><span>812 KB</span></div>
+          <div class="m-badges"><span class="m-badge ok">Remote Control on</span><span class="m-badge info">Working</span><span class="m-badge">281 MB</span><span class="k">8</span></div></div>
+        <div class="m-side"><span>▾</span><span>×</span><span class="k">9</span></div></div>
+    </div>
+
+    <div class="m-card">
+      <div class="m-row"><span class="m-check"></span><span class="m-tool">Codex</span><span class="k">10</span>
+        <div class="m-main"><div class="m-title">CAN decoder cleanup</div>
+          <div class="m-meta"><u>~/dev/can-fd</u><span>1h ago</span><code>9bc3e600</code></div>
+          <div class="m-badges"><span class="m-badge info">Working</span></div></div>
+        <div class="m-side"><span>▾</span><span>×</span></div></div>
+    </div>
+
+    <div class="m-card">
+      <div class="m-row"><span class="m-check"></span><span class="m-switch"></span>
+        <div class="m-main"><div class="m-title">OpenWrt mwan3 policy</div>
+          <div class="m-meta"><u>~/dev/scripts</u><span>2d ago</span><code>4dfb1309</code><span>96 KB</span></div>
+          <div class="m-badges"><span class="m-badge">Open in a terminal</span></div></div>
+        <div class="m-side"><span>▴</span><span>×</span></div></div>
+      <div class="m-panel"><span class="k">11</span>
+        <div class="m-actions"><span class="m-btn">Open in Claude ↗</span><span class="m-btn">Recent messages</span><span class="m-btn">Terminal screen</span><span class="m-btn">Restart</span></div>
+        <div class="m-msgs"><div class="m-msg user">why does mwan3 keep failing over to clientwan at night?</div><div class="m-msg">The tracker pings 8.8.8.8 every 10 s and the hotspot sleeps…</div></div>
+        <div><label>Title</label><div class="m-line"><span class="m-input">OpenWrt mwan3 policy</span><span class="m-btn">Rename</span></div></div>
+        <div><label>Working folder (Move takes the transcript there and a kept session restarts there; ▾ Fork copies it instead)</label><div class="m-line"><span class="m-input">/home/pi/dev/scripts</span><span class="m-split"><span class="m-btn">Move</span><span class="m-btn">▾</span></span></div></div>
+        <div><label>Remote Control name (blank = session title; applies on next launch)</label><div class="m-line"><span class="m-input">mwan3</span><span class="m-btn">Save</span></div></div>
+        <div><label>Resume in a shell on the Pi</label><div class="m-line"><span class="m-cmd">cd -- /home/pi/dev/scripts &amp;&amp; claudepd --resume 4dfb1309-…</span><span class="m-btn">Copy</span></div></div>
+      </div>
+    </div>
+    <div class="m-trash">▸ Recently deleted (1) · kept 30 days <span class="k">12</span></div>
+    <div class="m-bulk"><b>2 selected</b><span class="m-btn">Keep running</span><span class="m-btn">Stop keeping</span><span class="m-btn">Move to folder…</span><span class="m-btn danger">Delete</span><span class="m-btn">Select all</span><span class="m-btn">✕</span><span class="k">13</span></div>
+  </div>
+  <ol class="callouts">
+    <li><span class="k">1</span><span>Host, how many sessions are kept running, and how many of those currently have Remote Control connected.</span></li>
+    <li><span class="k">2</span><span>Start a session in an existing folder (<a href="#new">New session</a>). Key: <kbd>n</kbd>.</span></li>
+    <li><span class="k">3</span><span>Search; <strong>?</strong> opens the syntax. Every word must match; see <a href="#find">Find sessions</a>.</span></li>
+    <li><span class="k">4</span><span>Two filters: <strong>All / Kept running / Open now</strong> (open in any claude process, including SSH terminals) and <strong>All tools / Claude / Codex</strong>. The tool switch is remembered per browser and hidden when Codex support is off.</span></li>
+    <li><span class="k">5</span><span>Folder chips, newest activity first, each with its count under the current search. Click to show one folder; a folder name inside a row does the same.</span></li>
+    <li><span class="k">6</span><span>Selection circle for <a href="#bulk">acting on several</a>. Clicking the row itself also selects it.</span></li>
+    <li><span class="k">7</span><span>The keep-running switch: on means the supervisor runs this session in tmux with Remote Control and restarts it whenever it exits. A kept card gets an orange border. Codex rows show a <strong>Codex</strong> tag here instead (<span class="k">10</span>): the Codex daemon already holds every session.</span></li>
+    <li><span class="k">8</span><span>Badges: the supervisor state (<a href="#keep">table below</a>), <strong>Working</strong> while a turn runs, memory use, <strong>Queued</strong> before the first launch, <strong>New</strong> for a session created here that has not written a transcript yet, <strong>Open in a terminal</strong> when another claude process has it.</span></li>
+    <li><span class="k">9</span><span><strong>▾</strong> expands the <a href="#details">details panel</a>; <strong>×</strong> deletes (<a href="#delete">with undo</a>). Both are disabled while the session is open in another claude process.</span></li>
+    <li><span class="k">11</span><span>The details panel of a Claude session. A Codex panel has Recent messages, Title / Rename, Working folder / Fork… and the resume command only.</span></li>
+    <li><span class="k">12</span><span>Deleted sessions wait here 30 days with a Restore button and an <strong>Empty now</strong>.</span></li>
+    <li><span class="k">13</span><span>The bar that appears once something is selected.</span></li>
+  </ol>
+  <p class="small">The page fits a phone: the toolbar wraps and the panel fields stack. There is a dark theme following the system setting.</p>
+</section>
+
+<section id="keep">
+  <h2>Keep a session running</h2>
+  <p>Flip the switch on a Claude session. The supervisor opens a window in its own tmux server (<code>tmux -L claude-always-remote</code>) and runs <code>claudepd --resume &lt;id&gt; --remote-control &lt;name&gt;</code> there, from the session's working folder, so it has the same settings as an interactive <code>claudepd</code>: bypass permissions and no Model Gateway, which is what lets Remote Control work. From then on:</p>
+  <ul class="plain-list">
+    <li>The session appears in the Claude app and at claude.ai/code under its Remote Control name (blank means the session title; change it in the panel, applied at the next launch). <strong>Open in Claude ↗</strong> in the panel is the link from its last connection.</li>
+    <li>If claude exits, it is relaunched: after a quick failure the wait doubles from 10 s up to 10 minutes; a run of five minutes or more resets that.</li>
+    <li>It is not launched while the same session is open in another claude process (an SSH terminal, say). It waits for that process to exit, then starts.</li>
+    <li>It waits for <code>api.anthropic.com</code> to be reachable before launching, which matters when the van's uplink is down.</li>
+    <li>The tmux server survives a restart of the service, and every enabled session starts again at boot. The list of enabled sessions is <code>~/.config/claude-always-remote/sessions.json</code>.</li>
+    <li>Each running session is a full claude process, roughly 280 MB on the Pi 4, so keep a handful, not dozens.</li>
+  </ul>
+  <h3>States</h3>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Badge</th><th>Meaning</th></tr></thead><tbody>
+    <tr><td class="lead-cell">Remote Control on</td><td data-label="Meaning">Window up and Claude Code's status line shows <code>/rc active</code> (or a bare <code>/rc</code> while a turn runs).</td></tr>
+    <tr><td class="lead-cell">Starting</td><td data-label="Meaning">Launched in the last 45 s, or the status line shows <code>/rc connecting</code> or <code>reconnecting</code>.</td></tr>
+    <tr><td class="lead-cell">Needs attention</td><td data-label="Meaning">Running, but a prompt is waiting (folder trust, for example), <code>/rc failed</code>, or no indicator after 45 s. Use <strong>Terminal screen</strong> or attach in a shell.</td></tr>
+    <tr><td class="lead-cell">Waiting: open elsewhere</td><td data-label="Meaning">Another claude process has the session; it starts when that exits.</td></tr>
+    <tr><td class="lead-cell">Waiting for network</td><td data-label="Meaning">The API is unreachable; it launches when it is.</td></tr>
+    <tr><td class="lead-cell">Exited, relaunching</td><td data-label="Meaning">claude exited; a relaunch is scheduled. The panel shows the exit status, how long it ran and the launch count.</td></tr>
+    <tr><td class="lead-cell">Transcript missing</td><td data-label="Meaning">No transcript with that id exists any more.</td></tr>
+  </tbody></table></div>
+  <p class="small"><strong>Restart</strong> in the panel relaunches a kept session now. Switching it off closes its window; the transcript stays. If you <code>/clear</code> inside a kept session, Claude Code starts a new session id, but the supervisor keeps relaunching the id you enabled.</p>
+</section>
+
+<section id="find">
+  <h2>Find sessions</h2>
+  <p>Type in the search box. Every term must match, case ignored, against the title, first prompt, folder, id and Remote Control name. The folder chips and both filter rows combine with the search, and the chip counts follow it.</p>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Term</th><th>Matches</th></tr></thead><tbody>
+    <tr><td class="lead-cell"><code>word</code> · <code>"two words"</code></td><td data-label="Matches">A word anywhere, or an exact phrase.</td></tr>
+    <tr><td class="lead-cell"><code>-word</code> · <code>-dir:tmp</code> · <code>-"a phrase"</code></td><td data-label="Matches">Excludes; works in front of any term below.</td></tr>
+    <tr><td class="lead-cell"><code>dir:obd</code> (also <code>folder:</code>, <code>in:</code>)</td><td data-label="Matches">Part of the folder path.</td></tr>
+    <tr><td class="lead-cell"><code>title:telem</code> · <code>id:c969</code></td><td data-label="Matches">Only the title, or only the id.</td></tr>
+    <tr><td class="lead-cell"><code>is:kept</code> · <code>is:off</code></td><td data-label="Matches">Keep-running switch on, or off.</td></tr>
+    <tr><td class="lead-cell"><code>is:running</code> · <code>is:attention</code> · <code>is:elsewhere</code></td><td data-label="Matches">Kept sessions in that supervisor state. <code>state:backoff</code> matches any exact state name.</td></tr>
+    <tr><td class="lead-cell"><code>is:open</code> · <code>is:busy</code></td><td data-label="Matches">Open in any claude process; working on a turn right now (Claude or Codex).</td></tr>
+    <tr><td class="lead-cell"><code>is:claude</code> · <code>is:codex</code></td><td data-label="Matches">One tool, the same as the switch.</td></tr>
+    <tr><td class="lead-cell"><code>age:&lt;2d</code> · <code>age:&gt;1w</code></td><td data-label="Matches">Last activity newer or older than that; units m, h, d, w.</td></tr>
+  </tbody></table></div>
+  <p class="small">An unparseable term shows a message under the toolbar instead of matching nothing. <kbd>/</kbd> jumps to the search box from anywhere on the page.</p>
+</section>
+
+<section id="details">
+  <h2>The details panel</h2>
+  <p><strong>▾</strong> (or <kbd>Enter</kbd> on the highlighted row) opens it under the row. What it offers for a Claude session:</p>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Control</th><th>Does</th></tr></thead><tbody>
+    <tr><td class="lead-cell">Open in Claude ↗</td><td data-label="Does">The claude.ai/code link from the session's last Remote Control connection. Only after it has connected once.</td></tr>
+    <tr><td class="lead-cell">Recent messages</td><td data-label="Does">The last few prompts and replies, read from the transcript, to tell similar sessions apart.</td></tr>
+    <tr><td class="lead-cell">Terminal screen</td><td data-label="Does">Kept sessions: the tmux window's last 200 lines, or the screen as it was when claude last exited. The place to read a waiting prompt.</td></tr>
+    <tr><td class="lead-cell">Restart</td><td data-label="Does">Kept sessions: relaunch now.</td></tr>
+    <tr><td class="lead-cell">Title · Rename</td><td data-label="Does">A kept session that is idle gets <code>/rename</code> typed into its window; a closed session gets Claude Code's own title record appended to its transcript. Either way the new title shows everywhere Claude Code lists sessions.</td></tr>
+    <tr><td class="lead-cell">Working folder · Move</td><td data-label="Does">Moves the transcript under the other folder's project directory and rewrites its <code>cwd</code> fields, so <code>claudepd --resume</code> works from there. A kept session restarts in the new folder. Type a path or pick one from the list of known folders.</td></tr>
+    <tr><td class="lead-cell">Move ▾ · Fork…</td><td data-label="Does">The arrow beside Move opens a menu with <strong>Fork…</strong>: copy the conversation so far into a new session with a new id and a name you choose, in this folder or another, optionally kept running. The original is only read, so it can be running. The copy drops the original's Remote Control link and any half-written last line.</td></tr>
+    <tr><td class="lead-cell">Remote Control name · Save</td><td data-label="Does">The name shown in the Claude app. Blank uses the title. Takes effect at the next launch.</td></tr>
+    <tr><td class="lead-cell">Resume in a shell on the Pi</td><td data-label="Does">A copyable <code>cd … &amp;&amp; claudepd --resume …</code> line. Kept sessions also get <code>claude-always-remote attach &lt;id&gt;</code>, which opens the tmux window in your terminal (detach with <kbd>Ctrl-b</kbd> <kbd>d</kbd>).</td></tr>
+  </tbody></table></div>
+  <p class="small">Rename, Move and × are refused while the session is open in another claude process, the same rule as <code>clauderm</code> and <code>claudeclean</code>: a running process owns its transcript. No two sessions in one folder may share a name (case and spacing ignored); rename, fork, move and new are refused with a message when they would make a duplicate.</p>
+</section>
+
+<section id="bulk">
+  <h2>Several at once</h2>
+  <p>Click a row to select it, <kbd>⌘</kbd>/<kbd>Ctrl</kbd>-click to add one, <kbd>⇧</kbd>-click for a range, or tap the circle. The bar at the bottom applies to the selection:</p>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Button</th><th>Does</th></tr></thead><tbody>
+    <tr><td class="lead-cell">Keep running · Stop keeping</td><td data-label="Does">Flip the switch on every selected Claude session, after a confirmation that lists them. Codex rows are skipped with a note.</td></tr>
+    <tr><td class="lead-cell">Move to folder…</td><td data-label="Does">One folder for all of them; sessions open elsewhere, or whose name is already taken there, are reported and left alone. Codex rows are skipped.</td></tr>
+    <tr><td class="lead-cell">Delete</td><td data-label="Does">To <a href="#delete">Recently deleted</a>, with one Undo for the whole batch.</td></tr>
+    <tr><td class="lead-cell">Select all · ✕</td><td data-label="Does">Everything currently shown (so search first, then select all), or clear.</td></tr>
+  </tbody></table></div>
+  <h3>Keys</h3>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Key</th><th>Does</th></tr></thead><tbody>
+    <tr><td class="lead-cell"><kbd>↑</kbd> <kbd>↓</kbd> or <kbd>j</kbd> <kbd>k</kbd></td><td data-label="Does">Move the highlight.</td></tr>
+    <tr><td class="lead-cell"><kbd>Space</kbd> · <kbd>⇧</kbd>+<kbd>↑</kbd><kbd>↓</kbd></td><td data-label="Does">Select the highlighted row; extend the selection.</td></tr>
+    <tr><td class="lead-cell"><kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>A</kbd> · <kbd>Esc</kbd></td><td data-label="Does">Select everything shown; clear the selection (or close a dialog).</td></tr>
+    <tr><td class="lead-cell"><kbd>Enter</kbd> · <kbd>⌫</kbd></td><td data-label="Does">Open the highlighted row's details; delete the selection.</td></tr>
+    <tr><td class="lead-cell"><kbd>/</kbd> · <kbd>n</kbd></td><td data-label="Does">Search; New session. Dialogs confirm with <kbd>Enter</kbd>.</td></tr>
+  </tbody></table></div>
+</section>
+
+<section id="new">
+  <h2>New session</h2>
+  <p><strong>+ New session</strong> asks for a tool, a folder and a name; Codex also needs a first message.</p>
+  <ul class="plain-list">
+    <li><strong>Folder:</strong> only folders that already have sessions and still exist are offered. For Claude the folder must also be one Claude Code already trusts (per <code>~/.claude.json</code>), and <code>~</code> is never offered, because Claude Code asks about it every time and the session would sit at that prompt. Codex has no trust prompt, so any existing folder works, <code>~</code> included.</li>
+    <li><strong>Claude:</strong> the session starts in tmux through <code>claudepd --session-id … --name … --remote-control …</code> and is kept running like any other. The card says <strong>New</strong> until the transcript exists, then <strong>Starting</strong>, then <strong>Remote Control on</strong> with an Open in Claude button. A push notification goes out through <code>~/scripts/ntfy_send.sh</code> with the claude.ai link, or a "needs attention" one if it does not come up.</li>
+    <li><strong>Codex:</strong> the session starts in the Codex daemon and begins working on the first message at once, with approval policy <code>never</code> (what <code>codexp</code> passes), so nobody has to be there to approve anything. Codex saves a session only once it has a message, which is why the field is required. The card shows <strong>Working</strong> until the turn ends; there is no notification.</li>
+  </ul>
+  <div class="code"><pre><code>claude-always-remote new --list                                   # folders a new session may use
+claude-always-remote new ~/dev/obd-things "ignition-off logger"
+claude-always-remote new ~/dev/can-fd "decoder cleanup" --codex "tidy the DBC loader and add tests"</code></pre></div>
+</section>
+
+<section id="delete">
+  <h2>Delete and restore</h2>
+  <p><strong>×</strong> on a row, <kbd>⌫</kbd>, or the bar's <strong>Delete</strong>. A toast offers <strong>Undo</strong> for a moment; after that the session sits under <strong>Recently deleted</strong> with a <strong>Restore</strong> button for 30 days, then goes for good. <strong>Empty now</strong> does that immediately, after a confirmation.</p>
+  <ul class="plain-list">
+    <li><strong>Claude:</strong> a kept session is stopped first. The transcript and its companion folder move to <code>~/.local/share/claude-always-remote/trash/</code>; Restore moves them back. Refused while the session is open in another claude process.</li>
+    <li><strong>Codex:</strong> the session is archived in Codex (its own soft delete), so the Codex app and TUI stop listing it too; Restore unarchives it. After 30 days or Empty now it is deleted from Codex. Codex refuses to delete a session that a fork's history still points at; that one simply stays archived. A session working on a turn cannot be deleted until it finishes.</li>
+  </ul>
+</section>
+
+<section id="codex">
+  <h2>Codex sessions</h2>
+  <p>Codex sessions are read and changed through Codex's shared app-server daemon, the same socket the Codex TUI uses, never by editing the files under <code>~/.codex</code> (Codex keeps their state in a database as well). The daemon normally runs all the time on the Pi; the page lists sessions from its state database, which answers in milliseconds, and keeps the last good list if the daemon restarts (it does after a Codex update).</p>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Action</th><th>Claude session</th><th>Codex session</th></tr></thead><tbody>
+    <tr><td class="lead-cell">Keep running</td><td data-label="Claude">The switch.</td><td data-label="Codex">None: the daemon holds every session, and Codex remote control is one setting for the whole Pi, not per session.</td></tr>
+    <tr><td class="lead-cell">Rename</td><td data-label="Claude">Panel.</td><td data-label="Codex">Panel; the Codex app shows the new name too.</td></tr>
+    <tr><td class="lead-cell">Recent messages</td><td data-label="Claude">From the transcript.</td><td data-label="Codex">From the daemon.</td></tr>
+    <tr><td class="lead-cell">Move</td><td data-label="Claude">Panel or bar.</td><td data-label="Codex">None: Codex has no way to change a session's folder. Fork it into the other folder instead.</td></tr>
+    <tr><td class="lead-cell">Fork</td><td data-label="Claude">Move ▾ menu, optionally kept running.</td><td data-label="Codex">Fork… button in the panel; same or another folder.</td></tr>
+    <tr><td class="lead-cell">Delete</td><td data-label="Claude">To the trash folder.</td><td data-label="Codex">Archived in Codex; see <a href="#delete">above</a>.</td></tr>
+    <tr><td class="lead-cell">New</td><td data-label="Claude">Folder and name.</td><td data-label="Codex">Folder, name and a first message it starts working on.</td></tr>
+    <tr><td class="lead-cell">Working</td><td data-label="Claude">While a turn runs in a kept session.</td><td data-label="Codex">While a turn runs; a turn keeps going after whoever started it disconnects.</td></tr>
+    <tr><td class="lead-cell">Open in a terminal</td><td data-label="Claude">Detected from the claude process list.</td><td data-label="Codex">Not detected. A Codex TUI started with extra <code>-c</code> options does not even go through the daemon.</td></tr>
+    <tr><td class="lead-cell">Resume in a shell</td><td data-label="Claude"><code>claudepd --resume</code></td><td data-label="Codex"><code>codexp resume &lt;id&gt;</code></td></tr>
+  </tbody></table></div>
+  <p class="small">Same-name rule across both: a Codex session cannot take a Claude session's name in the same folder, or the other way round. Short ids are the last 8 characters for Codex (its ids are time-ordered, so the first 8 collide) and the first 8 for Claude.</p>
+</section>
+
+<section id="cli">
+  <h2>From a shell</h2>
+  <p>Everything the page does, from any shell on the Pi. Ids can be any unique prefix; Codex sessions also go by the short id <code>list</code> shows.</p>
+  <div class="code"><pre><code>claude-always-remote list                 # every session, enabled first; "codex" in the state column
+claude-always-remote status               # enabled sessions and what the supervisor is doing
+claude-always-remote enable c96934f7 [--name "van telemetrics"]
+claude-always-remote disable c96934f7
+claude-always-remote restart c96934f7
+claude-always-remote attach c96934f7      # its tmux window; detach with Ctrl-b d
+claude-always-remote new --list
+claude-always-remote new ~/dev/obd-things "what it's for"
+claude-always-remote new ~/dev/obd-things "logger" --codex "add a logger"
+claude-always-remote fork c96934f7 "try another approach" [--folder ~/dev] [--keep]
+claude-always-remote stop-all             # kill the tmux server and every session in it
+journalctl --user -u claude-always-remote -f</code></pre></div>
+</section>
+
+<section id="service">
+  <h2>Where it lives</h2>
+  <ul class="plain-list">
+    <li>Checkout <code>~/dev/claude-always-remote</code>; the service runs <code>bin/claude-always-remote serve</code> from it, so a code change needs <code>systemctl --user restart claude-always-remote</code>. Running sessions are untouched: the tmux server is in its own systemd scope and the restarted supervisor adopts the windows.</li>
+    <li>User unit <code>claude-always-remote</code>, started at boot through <code>loginctl enable-linger pi</code>. Port 8777.</li>
+    <li>State: <code>~/.config/claude-always-remote/sessions.json</code> (enabled sessions) and <code>codex-trash.json</code> (Codex sessions deleted here); trash in <code>~/.local/share/claude-always-remote/trash/</code>.</li>
+    <li>Sessions are the same files Claude Code uses, <code>~/.claude/projects/*/*.jsonl</code>, read in place; Codex sessions come from the daemon socket under <code>~/.codex/app-server-control/</code>.</li>
+    <li>Tests: <code>python3 -m unittest discover -s tests</code> and <code>tests/browser/run.sh</code> (headless Chromium against a fake home and a fake Codex daemon). The repo's AGENTS.md asks for this guide to be updated with any change in behaviour.</li>
+  </ul>
+</section>
+
+<section id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <div class="table-wrap"><table class="stack"><thead><tr><th>Symptom</th><th>Fix</th></tr></thead><tbody>
+    <tr><td class="lead-cell">The page does not load</td><td data-label="Fix"><code>systemctl --user status claude-always-remote</code>, then <code>journalctl --user -u claude-always-remote -n 50</code>. Over Tailscale use the Pi's tailnet address with port 8777.</td></tr>
+    <tr><td class="lead-cell">Needs attention</td><td data-label="Fix">Open <strong>Terminal screen</strong>. A folder-trust question means the folder is new to Claude Code: answer it once with <code>claude-always-remote attach &lt;id&gt;</code>. <code>/rc failed</code> usually clears with <strong>Restart</strong>.</td></tr>
+    <tr><td class="lead-cell">Waiting: open elsewhere</td><td data-label="Fix">Close the session in the SSH terminal that has it (<code>is:open</code> finds such sessions). The supervisor launches it as soon as that process exits.</td></tr>
+    <tr><td class="lead-cell">Exited, relaunching, over and over</td><td data-label="Fix">The panel shows the last exit status and screen. Common causes: the API unreachable (watch the state go to Waiting for network), or a transcript that no longer resumes.</td></tr>
+    <tr><td class="lead-cell">Not in the Claude app</td><td data-label="Fix">Only kept sessions in <strong>Remote Control on</strong> appear there. Check the Remote Control name in the panel; it changes at the next launch, so Restart after saving.</td></tr>
+    <tr><td class="lead-cell">Rename, Move or × is greyed out</td><td data-label="Fix">The session is open in another claude process; the tooltip names its pid. Close it there.</td></tr>
+    <tr><td class="lead-cell">"already has a session named …"</td><td data-label="Fix">Names are unique per folder across both tools. Pick another name, or rename the other one.</td></tr>
+    <tr><td class="lead-cell">"Codex sessions unavailable: …"</td><td data-label="Fix">The daemon is not running or its API changed. <code>codex app-server daemon start</code>; if it is running, Codex updated itself and the client needs a fix. The Claude side keeps working meanwhile.</td></tr>
+    <tr><td class="lead-cell">A Codex delete will not go through</td><td data-label="Fix">It is working on a turn; wait for <strong>Working</strong> to clear. If it is already in Recently deleted and refuses to purge, a fork still points at it and it stays archived in Codex, which is harmless.</td></tr>
+    <tr><td class="lead-cell">A new Codex session never appears</td><td data-label="Fix">Codex only saves a session after its first message is accepted. Check the daemon is up with <code>codex app-server daemon version</code>, and the page for a "Codex sessions unavailable" line.</td></tr>
+  </tbody></table></div>
+</section>
+</main></div>
+</body></html>
