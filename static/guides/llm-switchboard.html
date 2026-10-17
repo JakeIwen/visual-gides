@@ -30,11 +30,11 @@
 <h1>LLM Switchboard</h1>
 <dl class="facts">
   <dt>Use</dt><dd>Keep chosen Claude Code sessions running on vanpi with Remote Control on, so the phone can always reach them, and manage every Claude Code and Codex session on the Pi in one place: search, rename, fork, move, delete with undo, start new ones.</dd>
-  <dt>Open</dt><dd><a href="http://vanpi:8777">vanpi:8777</a> on the van LAN or over Tailscale. No login; anyone on either network can use it.</dd>
+  <dt>Open</dt><dd><a href="http://vanpi:8777">vanpi:8777</a> over Tailscale only (the Pi's MagicDNS name or <code>tailscale ip -4</code> address), or <code>127.0.0.1:8777</code> on the Pi itself. Not from the van LAN. No login; anyone on the tailnet can use it.</dd>
   <dt>Kind</dt><dd>A user systemd service on the Pi (<code>llm-switchboard</code>): a supervisor that runs sessions in tmux, plus this web page and a CLI. Python standard library, no build step.</dd>
   <dt>Source</dt><dd><code>~/dev/llm-switchboard</code> on the Pi · <code>JakeIwen/llm-switchboard</code> (private). The service runs from that checkout.</dd>
   <dt>Status</dt><dd><span class="tag ok">In daily use</span> Codex support added 2026-10-15 on an API Codex marks experimental.</dd>
-  <dt>Updated</dt><dd>2026-10-16</dd>
+  <dt>Updated</dt><dd>2026-10-17</dd>
 </dl>
 
 <section id="page">
@@ -247,7 +247,7 @@ journalctl --user -u llm-switchboard -f</code></pre></div>
   <h2>Where it lives</h2>
   <ul class="plain-list">
     <li>Checkout <code>~/dev/llm-switchboard</code>; the service runs <code>bin/llm-switchboard serve</code> from it, so a code change needs <code>systemctl --user restart llm-switchboard</code>. Running sessions are untouched: the tmux server is in its own systemd scope and the restarted supervisor adopts the windows.</li>
-    <li>User unit <code>llm-switchboard</code>, started at boot through <code>loginctl enable-linger pi</code>. Port 8777.</li>
+    <li>User unit <code>llm-switchboard</code>, started at boot through <code>loginctl enable-linger pi</code>. Port 8777, on localhost and the Tailscale address only; it answers only localhost and Tailscale peers, and binds the Tailscale address once Tailscale is up. <code>serve --host ADDR</code> (repeatable, <code>tailscale</code> for that address) changes where it listens.</li>
     <li>State: <code>~/.config/llm-switchboard/sessions.json</code> (enabled sessions) and <code>codex-trash.json</code> (Codex sessions deleted here); trash in <code>~/.local/share/llm-switchboard/trash/</code>.</li>
     <li>Sessions are the same files Claude Code uses, <code>~/.claude/projects/*/*.jsonl</code>, read in place; Codex sessions come from the daemon socket under <code>~/.codex/app-server-control/</code>.</li>
     <li>Tests: <code>python3 -m unittest discover -s tests</code> and <code>tests/browser/run.sh</code> (headless Chromium against a fake home and a fake Codex daemon). The repo's AGENTS.md asks for this guide to be updated with any change in behaviour.</li>
@@ -257,7 +257,7 @@ journalctl --user -u llm-switchboard -f</code></pre></div>
 <section id="troubleshooting">
   <h2>Troubleshooting</h2>
   <div class="table-wrap"><table class="stack"><thead><tr><th>Symptom</th><th>Fix</th></tr></thead><tbody>
-    <tr><td class="lead-cell">The page does not load</td><td data-label="Fix"><code>systemctl --user status llm-switchboard</code>, then <code>journalctl --user -u llm-switchboard -n 50</code>. Over Tailscale use the Pi's tailnet address with port 8777.</td></tr>
+    <tr><td class="lead-cell">The page does not load</td><td data-label="Fix"><code>systemctl --user status llm-switchboard</code>, then <code>journalctl --user -u llm-switchboard -n 50</code>. It does not answer on the van LAN: connect over Tailscale. If <code>vanpi</code> resolves to the LAN address, use the full MagicDNS name or <code>tailscale ip -4</code>'s address. The log line <code>not listening on Tailscale yet</code> means Tailscale is down on the Pi (<code>tailscale status</code>).</td></tr>
     <tr><td class="lead-cell">Needs attention</td><td data-label="Fix">Open <strong>Terminal screen</strong>. A folder-trust question means the folder is new to Claude Code: answer it once with <code>llm-switchboard attach &lt;id&gt;</code>. <code>/rc failed</code> usually clears with <strong>Restart</strong>.</td></tr>
     <tr><td class="lead-cell">Waiting: open elsewhere</td><td data-label="Fix">Close the session in the SSH terminal that has it (<code>is:open</code> finds such sessions). The supervisor launches it as soon as that process exits.</td></tr>
     <tr><td class="lead-cell">Exited, relaunching, over and over</td><td data-label="Fix">The panel shows the last exit status and screen. Common causes: the API unreachable (watch the state go to Waiting for network), or a transcript that no longer resumes.</td></tr>
